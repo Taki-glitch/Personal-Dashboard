@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Page d'accueil personnalisée</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>Bienvenue !</h1>
+    <div id="weather">
+      <p>Météo : <span id="weather-temp">--</span>°C</p>
+    </div>
+  </header>
+
+  <main>
+    <section id="todo">
+      <h2>Liste de tâches</h2>
+      <input type="text" id="new-task" placeholder="Nouvelle tâche">
+      <button id="add-task">Ajouter</button>
+      <ul id="task-list"></ul>
+    </section>
+
+    <section id="rss">
+      <h2>Flux RSS</h2>
+      <ul id="rss-list"></ul>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
