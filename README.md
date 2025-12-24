@@ -2,7 +2,7 @@
 
 Cette page d'accueil affiche :
 
-- 🌤️ Météo de Paris via OpenWeatherMap  
+- 🌤️ Météo de Nantes via OpenWeatherMap  
 - ✅ Liste de tâches sauvegardée en local  
 - 📰 Flux RSS de sites d’actualités  
 
