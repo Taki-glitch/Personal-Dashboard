@@ -24,28 +24,31 @@ header h1 {
 
 /* ===== MÉTÉO ===== */
 #weather-bar {
+  display: flex;
+  justify-content: center; /* CENTRAGE */
   overflow-x: auto;
 }
 
 #weather-hours {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   padding: 10px 0;
 }
 
+/* Cartes météo */
 .weather-hour {
-  min-width: 80px;
+  min-width: 90px;
   background: rgba(255, 255, 255, 0.25);
-  border-radius: 8px;
+  border-radius: 10px;
   text-align: center;
-  padding: 8px 5px;
+  padding: 10px 6px;
   font-size: 14px;
   flex-shrink: 0;
 }
 
 .weather-hour img {
-  width: 45px;
-  height: 45px;
+  width: 48px;
+  height: 48px;
 }
 
 .hour {
