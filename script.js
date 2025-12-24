@@ -80,16 +80,16 @@ document.addEventListener("DOMContentLoaded", () => {
       		}
     		});
 
-    // Sécurité : si aucune donnée (ex : tôt le matin)
-    if (!weatherContainer.children.length) {
-      weatherContainer.innerHTML = "<p>Météo du jour indisponible</p>";
-    }
+    		// Sécurité : si aucune donnée (ex : tôt le matin)
+    		if (!weatherContainer.children.length) {
+      		weatherContainer.innerHTML = "<p>Météo du jour indisponible</p>";
+    		}
 
-  })
-  .catch(err => {
-    console.error("Erreur météo :", err);
-    weatherContainer.innerHTML = "<p>Météo indisponible</p>";
-  });
+  		})
+ 		.catch(err => {
+    		console.error("Erreur météo :", err);
+    		weatherContainer.innerHTML = "<p>Météo indisponible</p>";
+  		});
 
   /********** FLUX RSS **********/
   const rssList = document.getElementById("rss-list");
