@@ -40,55 +40,64 @@ document.addEventListener("DOMContentLoaded", () => {
 
   renderTasks();
 
-  /********** MÉTÉO HORAIRE – NANTES **********/
+  /********** MÉTÉO – AUJOURD’HUI & DEMAIN (PRÉVISIONS) **********/
 	const WEATHER_API_KEY = "da91d5662517021a00fcf43c95937071";
 	const CITY = "Nantes";
 	const COUNTRY = "FR";
-	const weatherContainer = document.getElementById("weather-hours");
+
+	const todayContainer = document.getElementById("weather-today");
+	const tomorrowContainer = document.getElementById("weather-tomorrow");
 
 	fetch(`https://api.openweathermap.org/data/2.5/forecast?q=${CITY},${COUNTRY}&units=metric&lang=fr&appid=${WEATHER_API_KEY}`)
   		.then(res => res.json())
   		.then(data => {
 
-    		const today = new Date().toISOString().split("T")[0];
+    		const now = new Date();
+    		const today = now.toISOString().split("T")[0];
 
-    		// Heures souhaitées
+    		const tomorrowDate = new Date(now);
+    		tomorrowDate.setDate(now.getDate() + 1);
+    		const tomorrow = tomorrowDate.toISOString().split("T")[0];
+
     		const targetHours = ["06", "09", "12", "15", "18", "21"];
 
-    		weatherContainer.innerHTML = "";
+    		function renderForecast(container, date, onlyFuture = false) {
+      		container.innerHTML = "";
 
-    		data.list.forEach(item => {
-      		const [date, time] = item.dt_txt.split(" ");
-      		const hour = time.slice(0, 2);
+      		data.list.forEach(item => {
+        		const [itemDate, itemTime] = item.dt_txt.split(" ");
+        		const hour = itemTime.slice(0, 2);
 
-      		// Aujourd’hui + heures ciblées
-      		if (date === today && targetHours.includes(hour)) {
+        		if (
+          		itemDate === date &&
+          		targetHours.includes(hour) &&
+          		(!onlyFuture || new Date(item.dt_txt) > now)
+        		) {
+          		const temp = Math.round(item.main.temp);
+          		const icon = item.weather[0].icon;
+          		const desc = item.weather[0].description;
 
-        		const temp = Math.round(item.main.temp);
-        		const icon = item.weather[0].icon;
-        		const desc = item.weather[0].description;
+          		const div = document.createElement("div");
+          		div.className = "weather-hour";
+          		div.innerHTML = `
+            		<div class="hour">${hour}:00</div>
+            		<img src="https://openweathermap.org/img/wn/${icon}@2x.png" alt="${desc}">
+            		<div class="temp">${temp}°C</div>
+          		`;
 
-        		const div = document.createElement("div");
-        		div.className = "weather-hour";
-        		div.innerHTML = `
-          		<div class="hour">${hour}:00</div>
-          		<img src="https://openweathermap.org/img/wn/${icon}@2x.png" alt="${desc}">
-          		<div class="temp">${temp}°C</div>
-        		`;
-
-        		weatherContainer.appendChild(div);
-      		}
-    		});
-
-    		// Sécurité : si aucune donnée (ex : tôt le matin)
-    		if (!weatherContainer.children.length) {
-      		weatherContainer.innerHTML = "<p>Météo du jour indisponible</p>";
+          		container.appendChild(div);
+        		}
+      		});
     		}
 
+    		// Aujourd’hui → seulement les heures futures
+    		renderForecast(todayContainer, today, true);
+
+    		// Demain → journée complète
+    		renderForecast(tomorrowContainer, tomorrow, false);
   		})
- 		.catch(err => {
+  		.catch(err => {
     		console.error("Erreur météo :", err);
-    		weatherContainer.innerHTML = "<p>Météo indisponible</p>";
   		});
 
   /********** FLUX RSS **********/
