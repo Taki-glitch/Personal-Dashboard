@@ -1,3 +1,8 @@
+/* RESET DE BASE */
+* {
+  box-sizing: border-box;
+}
+
 body {
   font-family: Arial, sans-serif;
   margin: 0;
@@ -5,6 +10,7 @@ body {
   color: #333;
 }
 
+/* ===== HEADER ===== */
 header {
   background: #007ACC;
   color: white;
@@ -12,11 +18,11 @@ header {
 }
 
 header h1 {
-  margin: 0 0 10px 0;
+  margin: 0 0 10px;
   text-align: center;
 }
 
-/* BARRE MÉTÉO */
+/* ===== MÉTÉO ===== */
 #weather-bar {
   overflow-x: auto;
 }
@@ -29,16 +35,17 @@ header h1 {
 
 .weather-hour {
   min-width: 80px;
-  background: rgba(255,255,255,0.2);
+  background: rgba(255, 255, 255, 0.25);
   border-radius: 8px;
   text-align: center;
-  padding: 5px;
+  padding: 8px 5px;
   font-size: 14px;
+  flex-shrink: 0;
 }
 
 .weather-hour img {
-  width: 50px;
-  height: 50px;
+  width: 45px;
+  height: 45px;
 }
 
 .hour {
@@ -49,36 +56,68 @@ header h1 {
   font-size: 16px;
 }
 
-/* CONTENU */
+/* ===== CONTENU PRINCIPAL ===== */
 main {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
   gap: 20px;
-  padding: 20px;
+  padding: 15px;
 }
 
 section {
   background: white;
   padding: 15px;
   border-radius: 8px;
-  width: 300px;
+  width: 100%;
+  max-width: 400px;
   box-shadow: 0 2px 6px rgba(0,0,0,0.1);
 }
 
+/* FORMULAIRES */
 input, button {
   width: 100%;
-  padding: 5px;
+  padding: 8px;
   margin-top: 5px;
+  font-size: 16px;
 }
 
+button {
+  cursor: pointer;
+}
+
+/* LISTES */
 ul {
   list-style: none;
   padding: 0;
 }
 
 li {
-  padding: 5px 0;
+  padding: 6px 0;
   border-bottom: 1px solid #eee;
   cursor: pointer;
+}
+
+li:hover {
+  background: #f9f9f9;
+}
+
+/* ===== TABLETTE ===== */
+@media (min-width: 600px) {
+  section {
+    max-width: 500px;
+  }
+}
+
+/* ===== ORDINATEUR ===== */
+@media (min-width: 900px) {
+  main {
+    flex-direction: row;
+    justify-content: center;
+    align-items: flex-start;
+  }
+
+  section {
+    max-width: 350px;
+  }
 }
