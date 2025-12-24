@@ -57,19 +57,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
       weatherContainer.innerHTML = "";
 
-      todayForecasts.forEach(item => {
-        const hour = item.dt_txt.split(" ")[1].slice(0, 5);
-        const temp = Math.round(item.main.temp);
-        const icon = item.weather[0].icon;
-        const desc = item.weather[0].description;
+      todayForecasts
+        .filter((_, index) => index % 2 == 0) // toutes les 2 heures
+        .forEach(item => {
+          const hour = item.dt_txt.split(" ")[1].slice(0, 5);
+          const temp = Math.round(item.main.temp);
+          const icon = item.weather[0].icon;
+          const desc = item.weather[0].description;
 
-        const div = document.createElement("div");
-        div.className = "weather-hour";
-        div.innerHTML = `
-          <div class="hour">${hour}</div>
-          <img src="https://openweathermap.org/img/wn/${icon}@2x.png" alt="${desc}">
-          <div class="temp">${temp}°C</div>
-        `;
+          const div = document.createElement("div");
+          div.className = "weather-hour";
+          div.innerHTML = `
+            <div class="hour">${hour}</div>
+            <img src="https://openweathermap.org/img/wn/${icon}@2x.png" alt="${desc}">
+            <div class="temp">${temp}°C</div>
+          `;
         weatherContainer.appendChild(div);
       });
     })
