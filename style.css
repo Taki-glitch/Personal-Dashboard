@@ -63,6 +63,13 @@ header h1 {
   display: flex;
   flex-direction: column;
   align-items: center;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.3);
+  margin-bottom: 15px;
+}
+
+.weather-day {
+  border-bottom: none;
 }
 
 .weather-title {
