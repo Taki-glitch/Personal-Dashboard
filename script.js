@@ -8,6 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function getTasks() {
     return JSON.parse(localStorage.getItem("tasks") || "[]");
   }
+
   function saveTasks(tasks) {
     localStorage.setItem("tasks", JSON.stringify(tasks));
   }
@@ -40,7 +41,7 @@ document.addEventListener("DOMContentLoaded", () => {
   renderTasks();
 
   /********** MÉTÉO HORAIRE – NANTES **********/
-  const WEATHER_API_KEY = "da91d5662517021a00fcf43c95937071";
+  const WEATHER_API_KEY = CONFIG.OPENWEATHER_API_KEY;
   const CITY = "Nantes";
   const COUNTRY = "FR";
   const weatherContainer = document.getElementById("weather-hours");
