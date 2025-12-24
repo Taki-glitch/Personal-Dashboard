@@ -58,7 +58,7 @@ document.addEventListener("DOMContentLoaded", () => {
       weatherContainer.innerHTML = "";
 
       todayForecasts
-        .filter((_, index) => index % 2 == 0) // toutes les 2 heures
+        .filter((_, index) => index % 2 === 0) // toutes les 2 heures
         .forEach(item => {
           const hour = item.dt_txt.split(" ")[1].slice(0, 5);
           const temp = Math.round(item.main.temp);
