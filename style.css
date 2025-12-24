@@ -59,6 +59,13 @@ header h1 {
   font-size: 16px;
 }
 
+#weather-bar {
+  display: flex;
+  flex-direction: column; /* 👈 LA SOLUTION */
+  align-items: center;
+  gap: 15px; /* 👈 espace garanti entre Aujourd’hui et Demain */
+}
+
 .weather-day {
   display: flex;
   flex-direction: column;
@@ -68,7 +75,7 @@ header h1 {
   margin-bottom: 15px;
 }
 
-.weather-day {
+.weather-day: last-child {
   border-bottom: none;
 }
 
@@ -80,8 +87,10 @@ header h1 {
 .weather-hours {
   display: flex;
   gap: 12px;
-  padding-bottom: 10px;
+  padding-bottom: 5px;
 }
+
+
 
 /* ===== CONTENU PRINCIPAL ===== */
 main {
