@@ -179,38 +179,47 @@ li:hover {
   overflow-y: auto;
 }
 
+/* ===== EN-TÊTE RSS ===== */
 .rss-header {
-  position: relative;
-  margin-bottom: 15px;
-  height: 32px;
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
+  margin-bottom: 15px;
 }
 
+/* espace invisible pour équilibrer */
+.rss-spacer {
+  width: 24px;
+}
+
+/* Titre centré + bouton */
 #rss-title {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  margin: 0 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
   font-size: 18px;
   font-weight: bold;
   color: #000;
 }
 
+/* Bouton refresh */
 #refresh-rss {
-  position: absolute;
-  right: 0;
-  top: 0;
   background: none;
   border: none;
-  font-size: 18px;
+  font-size: 16px;
   cursor: pointer;
-  padding: 4px;
+  padding: 0;
 }
 
 #refresh-rss:hover {
   transform: rotate(90deg);
+}
+
+/* Mode sombre */
+body.dark #rss-title,
+body.dark #refresh-rss {
+  color: #fff;
 }
 
 #rss-list {
