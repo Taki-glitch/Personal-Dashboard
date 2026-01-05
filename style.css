@@ -123,50 +123,48 @@ li:hover {
   overflow-y: auto;
 }
 
-/* En-tête RSS : titre + emoji */
-.rss-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 10px;
-}
-
-/* Titre RSS */
 #rss-title {
-  margin: 0;
+  margin: 0 0 10px;
   font-size: 18px;
   font-weight: bold;
-  line-height: 1;
-  white-space: nowrap;
   color: #000;
 }
 
-/* Bouton thème : uniquement emoji */
+/* ===== BOUTON CHANGEMENT THÈME (sombre ou clair) ===== */
 #toggle-theme {
-  background: none;
+  position: fixed;
+  top: 12px;
+  right: 12px;
+
+  width: 34px;
+  height: 34px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: rgba(255, 255, 255, 0.85);
   border: none;
-  padding: 0;
-  margin: 0;
-  font-size: 20px; /* taille emoji */
-  line-height: 1;
+  border-radius: 50%;
+
+  font-size: 18px;
   cursor: pointer;
-  transition: transform 0.1s;
+
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  z-index: 1000;
+
+  transition: background 0.2s, transform 0.1s;
 }
 
 #toggle-theme:hover {
   transform: scale(1.1);
 }
 
-/* Liste RSS */
+/* ===== RSS LISTE ===== */
 #rss-list {
   display: flex;
   flex-direction: column;
   gap: 10px;
-}
-
-.rss-item {
-  padding: 0;
-  border: none;
 }
 
 .rss-item a {
@@ -178,24 +176,16 @@ li:hover {
   background: #f7f7f7;
   text-decoration: none;
   color: #333;
-  transition: background 0.2s, transform 0.1s;
 }
 
 .rss-item a:hover {
   background: #e9f2fa;
-  transform: translateY(-2px);
 }
 
 .rss-icon {
   width: 32px;
   height: 32px;
   border-radius: 6px;
-  flex-shrink: 0;
-}
-
-.rss-content {
-  display: flex;
-  flex-direction: column;
 }
 
 .rss-title {
@@ -227,25 +217,16 @@ body.dark .rss-item a {
   color: #f0f0f0;
 }
 
-body.dark .rss-item a:hover {
-  background: #333;
-}
-
 body.dark .rss-meta {
   color: #aaa;
 }
 
 body.dark #toggle-theme {
+  background: rgba(40, 40, 40, 0.9);
   color: #fff;
 }
 
 /* ===== RESPONSIVE ===== */
-@media (min-width: 600px) {
-  section {
-    max-width: 500px;
-  }
-}
-
 @media (min-width: 900px) {
   main {
     flex-direction: row;
