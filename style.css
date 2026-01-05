@@ -38,6 +38,11 @@ header {
   text-align: center;
 }
 
+header h1 {
+  margin: 0 0 10px;
+  text-align: center;
+}
+
 /* ===== MÉTÉO ===== */
 #weather-bar {
   display: flex;
@@ -52,6 +57,11 @@ header {
   align-items: center;
 }
 
+.weather-title {
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
 .weather-hours {
   display: flex;
   gap: 12px;
@@ -59,14 +69,25 @@ header {
 
 .weather-hour {
   min-width: 90px;
-  background: rgba(255,255,255,0.25);
+  background: rgba(255, 255, 255, 0.25);
   border-radius: 10px;
   text-align: center;
   padding: 10px 6px;
+  font-size: 14px;
+  flex-shrink: 0;
 }
 
 .weather-hour img {
   width: 48px;
+  height: 48px;
+}
+
+.hour {
+  font-weight: bold;
+}
+
+.temp {
+  font-size: 16px;
 }
 
 /* ===== MAIN ===== */
@@ -87,11 +108,69 @@ section {
   box-shadow: 0 2px 6px rgba(0,0,0,0.1);
 }
 
+/* ===== CONTENU PRINCIPAL ===== */
+main {
+  min-height: calc(100vh - 200px); /* laisse la place au header météo */
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 20px;
+}
+
+/* Conteneur des sections */
+main > section {
+  margin: 0 auto;
+}
+
+/* Desktop : sections côte à côte et centrées */
+@media (min-width: 900px) {
+  main {
+    flex-direction: row;
+    gap: 30px;
+  }
+
+  section {
+    max-width: 380px;
+  }
+}
+
+/* Mobile / tablette : empilé et centré */
+@media (max-width: 899px) {
+  main {
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
+}
+
 /* ===== FORM ===== */
 input, button {
   width: 100%;
   padding: 8px;
   margin-top: 5px;
+  font-size: 16px;
+}
+
+button {
+  cursor: pointer;
+}
+
+
+/* ===== LISTES ===== */
+ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+li {
+  padding: 6px 0;
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+}
+
+li:hover {
+  background: #f9f9f9;
 }
 
 /* ===== RSS ===== */
@@ -101,21 +180,33 @@ input, button {
 }
 
 .rss-header {
+  position: relative;
+  margin-bottom: 15px;
+  height: 32px;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
 #rss-title {
-  margin: 0;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0 0 10px;
   font-size: 18px;
+  font-weight: bold;
+  color: #000;
 }
 
 #refresh-rss {
+  position: absolute;
+  right: 0;
+  top: 0;
   background: none;
   border: none;
   font-size: 18px;
   cursor: pointer;
+  padding: 4px;
 }
 
 #refresh-rss:hover {
@@ -131,17 +222,23 @@ input, button {
 
 .rss-item a {
   display: flex;
+  align-items: center;
   gap: 10px;
   padding: 10px;
   border-radius: 10px;
   background: #f7f7f7;
   text-decoration: none;
-  color: inherit;
+  color: #333;
+}
+
+.rss-item a:hover {
+  background: #e9f2fa;
 }
 
 .rss-icon {
   width: 32px;
   height: 32px;
+  border-radius: 6px;
 }
 
 .rss-meta {
@@ -181,10 +278,19 @@ body.dark #toggle-theme {
   color: #fff;
 }
 
+body.dark #refresh-rss {
+  color: #fff;
+}
+
 /* ===== RESPONSIVE ===== */
 @media (min-width: 900px) {
   main {
     flex-direction: row;
+    justify-content: center;
     align-items: flex-start;
+  }
+
+  section {
+    max-width: 350px;
   }
 }
