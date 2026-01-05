@@ -119,45 +119,75 @@ document.addEventListener("DOMContentLoaded", () => {
     .catch(err => console.error("Erreur météo :", err));
 
   /********** FLUX RSS **********/
-  const rssList = document.getElementById("rss-list");
+	const rssList = document.getElementById("rss-list");
 
-  const RSS_FEEDS = [
-    {
-      url: "https://www.lemonde.fr/rss/une.xml",
-      source: "Le Monde",
-      icon: "https://www.lemonde.fr/favicon.ico"
-    },
-    {
-      url: "https://www.francetvinfo.fr/titres.rss",
-      source: "France Info",
-      icon: "https://www.francetvinfo.fr/favicon.ico"
-    }
-  ];
+	const RSS_FEEDS = [
+  		{
+    		url: "https://www.lemonde.fr/rss/une.xml",
+    		source: "Le Monde",
+    		icon: "https://www.lemonde.fr/favicon.ico"
+  		},
+  		{
+    		url: "https://www.francetvinfo.fr/titres.rss",
+    		source: "France Info",
+    		icon: "https://www.francetvinfo.fr/favicon.ico"
+  		}
+	];
 
-  RSS_FEEDS.forEach(feed => {
-    fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feed.url)}`)
-      .then(res => res.json())
-      .then(data => {
-        data.items.slice(0, 5).forEach(item => {
-          const li = document.createElement("li");
-          li.className = "rss-item";
+	function getReadArticles() {
+  		return JSON.parse(localStorage.getItem("readArticles") || "[]");
+	}
 
-          const date = new Date(item.pubDate).toLocaleDateString("fr-FR");
+	function saveReadArticle(link) {
+  		const read = getReadArticles();
+  		if (!read.includes(link)) {
+    		read.push(link);
+    		localStorage.setItem("readArticles", JSON.stringify(read));
+  		}
+	}
 
-          li.innerHTML = `
-            <a href="${item.link}" target="_blank">
-              <img class="rss-icon" src="${feed.icon}" alt="${feed.source}">
-              <div class="rss-content">
-                <div class="rss-title">${item.title}</div>
-                <div class="rss-meta">${feed.source} • ${date}</div>
-              </div>
-            </a>
-          `;
+	function loadRSS() {
+  		rssList.innerHTML = "";
 
-          rssList.appendChild(li);
-        });
-      })
-      .catch(err => console.error("Erreur RSS :", err));
-  });
+  		RSS_FEEDS.forEach(feed => {
+    		fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feed.url)}`)
+      		.then(res => res.json())
+      		.then(data => {
+        		const readArticles = getReadArticles();
+
+        		data.items.slice(0, 5).forEach(item => {
+          		const li = document.createElement("li");
+          		li.className = "rss-item";
+
+          		if (readArticles.includes(item.link)) {
+            		li.classList.add("read");
+          		}
+
+          		const date = new Date(item.pubDate).toLocaleDateString("fr-FR");
+
+          		li.innerHTML = `
+            		<a href="${item.link}" target="_blank">
+              		<img class="rss-icon" src="${feed.icon}" alt="${feed.source}">
+              		<div class="rss-content">
+                		<div class="rss-title">${item.title}</div>
+                		<div class="rss-meta">${feed.source} • ${date}</div>
+              		</div>
+            		</a>
+          		`;
+
+          		li.querySelector("a").addEventListener("click", () => {
+            		saveReadArticle(item.link);
+            		li.classList.add("read");
+          		});
+
+          		rssList.appendChild(li);
+        		});
+      		})
+      		.catch(err => console.error("Erreur RSS :", err));
+  		});
+	}
+
+	// Chargement initial
+	loadRSS();
 
 });
