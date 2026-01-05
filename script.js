@@ -104,8 +104,16 @@ document.addEventListener("DOMContentLoaded", () => {
 const rssList = document.getElementById("rss-list");
 
 const RSS_FEEDS = [
-  { url: "https://www.lemonde.fr/rss/une.xml", source: "Le Monde" },
-  { url: "https://www.francetvinfo.fr/titres.rss", source: "France Info" }
+  {
+    url: "https://www.lemonde.fr/rss/une.xml",
+    source: "Le Monde",
+    icon: "https://www.lemonde.fr/favicon.ico"
+  },
+  {
+    url: "https://www.francetvinfo.fr/titres.rss",
+    source: "France Info",
+    icon: "https://www.francetvinfo.fr/favicon.ico"
+  }
 ];
 
 RSS_FEEDS.forEach(feed => {
@@ -120,9 +128,10 @@ RSS_FEEDS.forEach(feed => {
 
         li.innerHTML = `
           <a href="${item.link}" target="_blank">
-            <div class="rss-title">${item.title}</div>
-            <div class="rss-meta">
-              <span>${feed.source}</span> • <span>${date}</span>
+            <img class="rss-icon" src="${feed.icon}" alt="${feed.source}">
+            <div class="rss-content">
+              <div class="rss-title">${item.title}</div>
+              <div class="rss-meta">${feed.source} • ${date}</div>
             </div>
           </a>
         `;
