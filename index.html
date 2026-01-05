@@ -8,23 +8,24 @@
 </head>
 <body>
 
-<header>
-  <h1>Bienvenue !</h1>
+<header class="header-top">
+  <div class="header-bar">
+    <h1>Bienvenue !</h1>
+    <button id="toggle-theme" aria-label="Changer le thème">🌙</button>
+  </div>
 
   <!-- BARRE MÉTÉO HORAIRE -->
   <div id="weather-bar">
-  		<div class="weather-day">
-    		<div class="weather-title">Aujourd’hui</div>
-    		<div class="weather-hours" id="weather-today"></div>
-  		</div>
+    <div class="weather-day">
+      <div class="weather-title">Aujourd’hui</div>
+      <div class="weather-hours" id="weather-today"></div>
+    </div>
 
-  		<div class="weather-day">
-    		<div class="weather-title">Demain</div>
-    		<div class="weather-hours" id="weather-tomorrow"></div>
-  		</div>
-	</div>
-
-	<button id="toggle-theme">🌙</button>
+    <div class="weather-day">
+      <div class="weather-title">Demain</div>
+      <div class="weather-hours" id="weather-tomorrow"></div>
+    </div>
+  </div>
 </header>
 
 <main>
