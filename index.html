@@ -3,24 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Page d'accueil personnalisée</title>
+  <title>Mon Dashboard Personnel</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<!-- Bouton thème global -->
 <button id="toggle-theme" aria-label="Changer le thème">🌙</button>
 
 <header>
   <h1>Bienvenue !</h1>
 
-  <!-- BARRE MÉTÉO -->
   <div id="weather-bar">
     <div class="weather-day">
       <div class="weather-title">Aujourd’hui</div>
       <div class="weather-hours" id="weather-today"></div>
     </div>
-
     <div class="weather-day">
       <div class="weather-title">Demain</div>
       <div class="weather-hours" id="weather-tomorrow"></div>
@@ -31,26 +28,29 @@
 <main>
   <section id="todo">
     <h2>Liste de tâches</h2>
-    <input type="text" id="new-task" placeholder="Nouvelle tâche">
-    <button id="add-task">Ajouter</button>
+    <div class="input-group">
+      <input type="text" id="new-task" placeholder="Nouvelle tâche...">
+      <button id="add-task">Ajouter</button>
+    </div>
     <ul id="task-list"></ul>
   </section>
 
   <section id="rss">
-  		<div class="rss-header">
-  			<span class="rss-spacer"></span>
+    <div class="rss-header">
+      <h2>Flux RSS <button id="refresh-rss" title="Actualiser">🔄</button></h2>
+    </div>
 
-  			<h2 id="rss-title">
-    			Flux RSS
-    			<button id="refresh-rss" title="Actualiser">🔄</button>
-  			</h2>
-		</div>
+    <div id="rss-manage">
+      <input type="text" id="rss-name" placeholder="Nom (ex: Le Monde)">
+      <input type="text" id="rss-url" placeholder="URL du flux RSS">
+      <button id="add-rss">Ajouter la source</button>
+    </div>
 
-  		<ul id="rss-list"></ul>
-	</section>
+    <div id="rss-sources-pills"></div>
+    <ul id="rss-list"></ul>
+  </section>
 </main>
 
-<script src="config.js"></script>
 <script src="script.js"></script>
 </body>
 </html>
