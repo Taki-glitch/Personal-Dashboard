@@ -1,109 +1,142 @@
 document.addEventListener("DOMContentLoaded", () => {
 
-  /* ===== THÈME ===== */
-  const toggleThemeBtn = document.getElementById("toggle-theme");
+    /* --- THÈME --- */
+    const toggleThemeBtn = document.getElementById("toggle-theme");
+    const applyTheme = (theme) => {
+        document.body.classList.toggle("dark", theme === "dark");
+        toggleThemeBtn.textContent = theme === "dark" ? "☀️" : "🌙";
+    };
 
-  function applyTheme(theme) {
-    document.body.classList.toggle("dark", theme === "dark");
-    toggleThemeBtn.textContent = theme === "dark" ? "☀️" : "🌙";
-  }
+    let currentTheme = localStorage.getItem("theme") || "light";
+    applyTheme(currentTheme);
 
-  const savedTheme = localStorage.getItem("theme") || "light";
-  applyTheme(savedTheme);
+    toggleThemeBtn.onclick = () => {
+        currentTheme = currentTheme === "light" ? "dark" : "light";
+        localStorage.setItem("theme", currentTheme);
+        applyTheme(currentTheme);
+    };
 
-  toggleThemeBtn.addEventListener("click", () => {
-    const theme = document.body.classList.contains("dark") ? "light" : "dark";
-    localStorage.setItem("theme", theme);
-    applyTheme(theme);
-  });
+    /* --- TODO LIST --- */
+    const taskList = document.getElementById("task-list");
+    const newTaskInput = document.getElementById("new-task");
+    const addTaskBtn = document.getElementById("add-task");
 
-  /* ===== TODO ===== */
-  const taskList = document.getElementById("task-list");
-  const newTask = document.getElementById("new-task");
+    const renderTasks = () => {
+        const tasks = JSON.parse(localStorage.getItem("tasks") || "[]");
+        taskList.innerHTML = tasks.map((t, i) => `
+            <li>
+                <span>${t}</span>
+                <button onclick="removeTask(${i})" style="background:none; color:red; width:auto;">✕</button>
+            </li>
+        `).join("");
+    };
 
-  function renderTasks() {
-    taskList.innerHTML = "";
-    (JSON.parse(localStorage.getItem("tasks") || "[]")).forEach((task, i) => {
-      const li = document.createElement("li");
-      li.textContent = task;
-      li.onclick = () => {
-        const tasks = JSON.parse(localStorage.getItem("tasks"));
-        tasks.splice(i, 1);
+    window.removeTask = (index) => {
+        const tasks = JSON.parse(localStorage.getItem("tasks") || "[]");
+        tasks.splice(index, 1);
         localStorage.setItem("tasks", JSON.stringify(tasks));
         renderTasks();
-      };
-      taskList.appendChild(li);
-    });
-  }
+    };
 
-  document.getElementById("add-task").onclick = () => {
-    if (!newTask.value.trim()) return;
-    const tasks = JSON.parse(localStorage.getItem("tasks") || "[]");
-    tasks.push(newTask.value.trim());
-    localStorage.setItem("tasks", JSON.stringify(tasks));
-    newTask.value = "";
+    addTaskBtn.onclick = () => {
+        const text = newTaskInput.value.trim();
+        if (!text) return;
+        const tasks = JSON.parse(localStorage.getItem("tasks") || "[]");
+        tasks.push(text);
+        localStorage.setItem("tasks", JSON.stringify(tasks));
+        newTaskInput.value = "";
+        renderTasks();
+    };
+
+    /* --- MÉTÉO --- */
+    const fetchWeather = () => {
+        const url = "https://api.openweathermap.org/data/2.5/forecast?q=Nantes,FR&units=metric&lang=fr&appid=da91d5662517021a00fcf43c95937071";
+        fetch(url)
+            .then(r => r.json())
+            .then(data => {
+                const now = new Date().toISOString().split("T")[0];
+                const tomorrow = new Date(Date.now() + 86400000).toISOString().split("T")[0];
+
+                const buildHtml = (dateStr) => data.list
+                    .filter(i => i.dt_txt.startsWith(dateStr))
+                    .slice(0, 5)
+                    .map(i => `
+                        <div class="weather-hour">
+                            <div>${i.dt_txt.slice(11,16)}</div>
+                            <img src="https://openweathermap.org/img/wn/${i.weather[0].icon}.png">
+                            <strong>${Math.round(i.main.temp)}°C</strong>
+                        </div>`).join("");
+
+                document.getElementById("weather-today").innerHTML = buildHtml(now);
+                document.getElementById("weather-tomorrow").innerHTML = buildHtml(tomorrow);
+            }).catch(() => console.log("Erreur Météo"));
+    };
+
+    /* --- RSS DYNAMIQUE --- */
+    const rssList = document.getElementById("rss-list");
+    const rssPills = document.getElementById("rss-sources-pills");
+    const addRssBtn = document.getElementById("add-rss");
+
+    let myFeeds = JSON.parse(localStorage.getItem("rssFeeds")) || [
+        { name: "Le Monde", url: "https://www.lemonde.fr/rss/une.xml" },
+        { name: "France Info", url: "https://www.francetvinfo.fr/titres.rss" }
+    ];
+
+    const loadRSS = () => {
+        rssList.innerHTML = "<p>Chargement...</p>";
+        rssPills.innerHTML = myFeeds.map((f, i) => `
+            <span class="pill">${f.name} <button onclick="removeFeed(${i})">✕</button></span>
+        `).join("");
+
+        const readArticles = JSON.parse(localStorage.getItem("readArticles") || "[]");
+        rssList.innerHTML = "";
+
+        myFeeds.forEach(feed => {
+            fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feed.url)}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.status === 'ok') {
+                        data.items.slice(0, 3).forEach(item => {
+                            const li = document.createElement("li");
+                            li.className = "rss-item" + (readArticles.includes(item.link) ? " read" : "");
+                            li.innerHTML = `
+                                <a href="${item.link}" target="_blank">
+                                    <div><strong>${item.title}</strong></div>
+                                    <div class="rss-meta">${feed.name}</div>
+                                </a>`;
+                            li.onclick = () => {
+                                if(!readArticles.includes(item.link)) {
+                                    readArticles.push(item.link);
+                                    localStorage.setItem("readArticles", JSON.stringify(readArticles));
+                                    li.classList.add("read");
+                                }
+                            };
+                            rssList.appendChild(li);
+                        });
+                    }
+                });
+        });
+    };
+
+    window.removeFeed = (index) => {
+        myFeeds.splice(index, 1);
+        localStorage.setItem("rssFeeds", JSON.stringify(myFeeds));
+        loadRSS();
+    };
+
+    addRssBtn.onclick = () => {
+        const name = document.getElementById("rss-name").value.trim();
+        const url = document.getElementById("rss-url").value.trim();
+        if (name && url) {
+            myFeeds.push({ name, url });
+            localStorage.setItem("rssFeeds", JSON.stringify(myFeeds));
+            loadRSS();
+        }
+    };
+
+    /* --- INIT --- */
     renderTasks();
-  };
-
-  renderTasks();
-
-  /* ===== MÉTÉO ===== */
-  fetch("https://api.openweathermap.org/data/2.5/forecast?q=Nantes,FR&units=metric&lang=fr&appid=da91d5662517021a00fcf43c95937071")
-    .then(r => r.json())
-    .then(data => {
-      const now = new Date();
-      ["weather-today", "weather-tomorrow"].forEach((id, d) => {
-        const date = new Date(now);
-        date.setDate(now.getDate() + d);
-        const target = date.toISOString().split("T")[0];
-        document.getElementById(id).innerHTML = data.list
-          .filter(i => i.dt_txt.startsWith(target))
-          .slice(0, 6)
-          .map(i => `
-            <div class="weather-hour">
-              <div>${i.dt_txt.slice(11,16)}</div>
-              <img src="https://openweathermap.org/img/wn/${i.weather[0].icon}@2x.png">
-              <div>${Math.round(i.main.temp)}°C</div>
-            </div>`).join("");
-      });
-    });
-
-  /* ===== RSS ===== */
-  const rssList = document.getElementById("rss-list");
-  const read = JSON.parse(localStorage.getItem("readArticles") || "[]");
-
-  function loadRSS() {
-    rssList.innerHTML = "";
-    [
-      { url: "https://www.lemonde.fr/rss/une.xml", name: "Le Monde", icon: "https://www.lemonde.fr/favicon.ico" },
-      { url: "https://www.francetvinfo.fr/titres.rss", name: "France Info", icon: "https://www.francetvinfo.fr/favicon.ico" }
-    ].forEach(feed => {
-      fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feed.url)}`)
-        .then(r => r.json())
-        .then(data => data.items.slice(0,5).forEach(item => {
-          const li = document.createElement("li");
-          li.className = "rss-item" + (read.includes(item.link) ? " read" : "");
-          li.innerHTML = `
-            <a href="${item.link}" target="_blank">
-              <img class="rss-icon" src="${feed.icon}">
-              <div>
-                <div class="rss-title">${item.title}</div>
-                <div class="rss-meta">${feed.name}</div>
-              </div>
-            </a>`;
-          li.onclick = () => {
-            if (!read.includes(item.link)) {
-              read.push(item.link);
-              localStorage.setItem("readArticles", JSON.stringify(read));
-              li.classList.add("read");
-            }
-          };
-          rssList.appendChild(li);
-        }));
-    });
-  }
-
-  document.getElementById("refresh-rss").onclick = loadRSS;
-  loadRSS();
-
+    fetchWeather();
+    loadRSS();
+    document.getElementById("refresh-rss").onclick = loadRSS;
 });
