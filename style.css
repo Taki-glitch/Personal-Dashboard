@@ -123,27 +123,32 @@ li:hover {
   overflow-y: auto;
 }
 
-/* En-tête RSS (bouton + titre) */
+/* En-tête RSS : bouton + titre */
 .rss-header {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   margin-bottom: 10px;
 }
 
+/* Titre RSS */
 #rss-title {
   margin: 0;
-  font-size: 20px;
+  font-size: 18px;
+  line-height: 1;
+  white-space: nowrap; /* empêche retour à la ligne */
   color: #000;
 }
 
-/* Bouton thème */
+/* Bouton thème RSS (CORRIGÉ) */
 #toggle-theme {
+  width: auto;          /* empêche le 100% */
+  margin-top: 0;        /* supprime le décalage */
+  padding: 4px 6px;     /* bouton compact */
+  font-size: 14px;
   background: #e0e0e0;
   border: none;
   border-radius: 6px;
-  padding: 5px 8px;
-  font-size: 16px;
   cursor: pointer;
 }
 
