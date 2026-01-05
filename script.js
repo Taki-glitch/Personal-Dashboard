@@ -1,193 +1,109 @@
 document.addEventListener("DOMContentLoaded", () => {
 
-  /********** THÈME CLAIR / SOMBRE **********/
+  /* ===== THÈME ===== */
   const toggleThemeBtn = document.getElementById("toggle-theme");
 
   function applyTheme(theme) {
-    if (theme === "dark") {
-      document.body.classList.add("dark");
-      toggleThemeBtn.textContent = "☀️";
-    } else {
-      document.body.classList.remove("dark");
-      toggleThemeBtn.textContent = "🌙";
-    }
+    document.body.classList.toggle("dark", theme === "dark");
+    toggleThemeBtn.textContent = theme === "dark" ? "☀️" : "🌙";
   }
 
-  // Initialisation du thème
   const savedTheme = localStorage.getItem("theme") || "light";
   applyTheme(savedTheme);
 
   toggleThemeBtn.addEventListener("click", () => {
-    const newTheme = document.body.classList.contains("dark") ? "light" : "dark";
-    localStorage.setItem("theme", newTheme);
-    applyTheme(newTheme);
+    const theme = document.body.classList.contains("dark") ? "light" : "dark";
+    localStorage.setItem("theme", theme);
+    applyTheme(theme);
   });
 
-  /********** TO-DO LIST **********/
+  /* ===== TODO ===== */
   const taskList = document.getElementById("task-list");
   const newTask = document.getElementById("new-task");
-  const addTaskBtn = document.getElementById("add-task");
-
-  function getTasks() {
-    return JSON.parse(localStorage.getItem("tasks") || "[]");
-  }
-
-  function saveTasks(tasks) {
-    localStorage.setItem("tasks", JSON.stringify(tasks));
-  }
 
   function renderTasks() {
     taskList.innerHTML = "";
-    getTasks().forEach((task, i) => {
+    (JSON.parse(localStorage.getItem("tasks") || "[]")).forEach((task, i) => {
       const li = document.createElement("li");
       li.textContent = task;
-      li.addEventListener("click", () => {
-        const tasks = getTasks();
+      li.onclick = () => {
+        const tasks = JSON.parse(localStorage.getItem("tasks"));
         tasks.splice(i, 1);
-        saveTasks(tasks);
+        localStorage.setItem("tasks", JSON.stringify(tasks));
         renderTasks();
-      });
+      };
       taskList.appendChild(li);
     });
   }
 
-  addTaskBtn.addEventListener("click", () => {
-    if (newTask.value.trim()) {
-      const tasks = getTasks();
-      tasks.push(newTask.value.trim());
-      saveTasks(tasks);
-      newTask.value = "";
-      renderTasks();
-    }
-  });
+  document.getElementById("add-task").onclick = () => {
+    if (!newTask.value.trim()) return;
+    const tasks = JSON.parse(localStorage.getItem("tasks") || "[]");
+    tasks.push(newTask.value.trim());
+    localStorage.setItem("tasks", JSON.stringify(tasks));
+    newTask.value = "";
+    renderTasks();
+  };
 
   renderTasks();
 
-  /********** MÉTÉO – AUJOURD’HUI & DEMAIN **********/
-  const WEATHER_API_KEY = "da91d5662517021a00fcf43c95937071";
-  const CITY = "Nantes";
-  const COUNTRY = "FR";
-
-  const todayContainer = document.getElementById("weather-today");
-  const tomorrowContainer = document.getElementById("weather-tomorrow");
-
-  fetch(`https://api.openweathermap.org/data/2.5/forecast?q=${CITY},${COUNTRY}&units=metric&lang=fr&appid=${WEATHER_API_KEY}`)
-    .then(res => res.json())
+  /* ===== MÉTÉO ===== */
+  fetch("https://api.openweathermap.org/data/2.5/forecast?q=Nantes,FR&units=metric&lang=fr&appid=da91d5662517021a00fcf43c95937071")
+    .then(r => r.json())
     .then(data => {
-
       const now = new Date();
-      const today = now.toISOString().split("T")[0];
+      ["weather-today", "weather-tomorrow"].forEach((id, d) => {
+        const date = new Date(now);
+        date.setDate(now.getDate() + d);
+        const target = date.toISOString().split("T")[0];
+        document.getElementById(id).innerHTML = data.list
+          .filter(i => i.dt_txt.startsWith(target))
+          .slice(0, 6)
+          .map(i => `
+            <div class="weather-hour">
+              <div>${i.dt_txt.slice(11,16)}</div>
+              <img src="https://openweathermap.org/img/wn/${i.weather[0].icon}@2x.png">
+              <div>${Math.round(i.main.temp)}°C</div>
+            </div>`).join("");
+      });
+    });
 
-      const tomorrowDate = new Date(now);
-      tomorrowDate.setDate(now.getDate() + 1);
-      const tomorrow = tomorrowDate.toISOString().split("T")[0];
+  /* ===== RSS ===== */
+  const rssList = document.getElementById("rss-list");
+  const read = JSON.parse(localStorage.getItem("readArticles") || "[]");
 
-      const targetHours = ["06", "09", "12", "15", "18", "21"];
+  function loadRSS() {
+    rssList.innerHTML = "";
+    [
+      { url: "https://www.lemonde.fr/rss/une.xml", name: "Le Monde", icon: "https://www.lemonde.fr/favicon.ico" },
+      { url: "https://www.francetvinfo.fr/titres.rss", name: "France Info", icon: "https://www.francetvinfo.fr/favicon.ico" }
+    ].forEach(feed => {
+      fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feed.url)}`)
+        .then(r => r.json())
+        .then(data => data.items.slice(0,5).forEach(item => {
+          const li = document.createElement("li");
+          li.className = "rss-item" + (read.includes(item.link) ? " read" : "");
+          li.innerHTML = `
+            <a href="${item.link}" target="_blank">
+              <img class="rss-icon" src="${feed.icon}">
+              <div>
+                <div class="rss-title">${item.title}</div>
+                <div class="rss-meta">${feed.name}</div>
+              </div>
+            </a>`;
+          li.onclick = () => {
+            if (!read.includes(item.link)) {
+              read.push(item.link);
+              localStorage.setItem("readArticles", JSON.stringify(read));
+              li.classList.add("read");
+            }
+          };
+          rssList.appendChild(li);
+        }));
+    });
+  }
 
-      function renderForecast(container, date, onlyFuture = false) {
-        container.innerHTML = "";
-
-        data.list.forEach(item => {
-          const [itemDate, itemTime] = item.dt_txt.split(" ");
-          const hour = itemTime.slice(0, 2);
-
-          if (
-            itemDate === date &&
-            targetHours.includes(hour) &&
-            (!onlyFuture || new Date(item.dt_txt) > now)
-          ) {
-            const temp = Math.round(item.main.temp);
-            const icon = item.weather[0].icon;
-            const desc = item.weather[0].description;
-
-            const div = document.createElement("div");
-            div.className = "weather-hour";
-            div.innerHTML = `
-              <div class="hour">${hour}:00</div>
-              <img src="https://openweathermap.org/img/wn/${icon}@2x.png" alt="${desc}">
-              <div class="temp">${temp}°C</div>
-            `;
-
-            container.appendChild(div);
-          }
-        });
-      }
-
-      renderForecast(todayContainer, today, true);
-      renderForecast(tomorrowContainer, tomorrow, false);
-    })
-    .catch(err => console.error("Erreur météo :", err));
-
-  /********** FLUX RSS **********/
-	const rssList = document.getElementById("rss-list");
-
-	const RSS_FEEDS = [
-  		{
-    		url: "https://www.lemonde.fr/rss/une.xml",
-    		source: "Le Monde",
-    		icon: "https://www.lemonde.fr/favicon.ico"
-  		},
-  		{
-    		url: "https://www.francetvinfo.fr/titres.rss",
-    		source: "France Info",
-    		icon: "https://www.francetvinfo.fr/favicon.ico"
-  		}
-	];
-
-	function getReadArticles() {
-  		return JSON.parse(localStorage.getItem("readArticles") || "[]");
-	}
-
-	function saveReadArticle(link) {
-  		const read = getReadArticles();
-  		if (!read.includes(link)) {
-    		read.push(link);
-    		localStorage.setItem("readArticles", JSON.stringify(read));
-  		}
-	}
-
-	function loadRSS() {
-  		rssList.innerHTML = "";
-
-  		RSS_FEEDS.forEach(feed => {
-    		fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feed.url)}`)
-      		.then(res => res.json())
-      		.then(data => {
-        		const readArticles = getReadArticles();
-
-        		data.items.slice(0, 5).forEach(item => {
-          		const li = document.createElement("li");
-          		li.className = "rss-item";
-
-          		if (readArticles.includes(item.link)) {
-            		li.classList.add("read");
-          		}
-
-          		const date = new Date(item.pubDate).toLocaleDateString("fr-FR");
-
-          		li.innerHTML = `
-            		<a href="${item.link}" target="_blank">
-              		<img class="rss-icon" src="${feed.icon}" alt="${feed.source}">
-              		<div class="rss-content">
-                		<div class="rss-title">${item.title}</div>
-                		<div class="rss-meta">${feed.source} • ${date}</div>
-              		</div>
-            		</a>
-          		`;
-
-          		li.querySelector("a").addEventListener("click", () => {
-            		saveReadArticle(item.link);
-            		li.classList.add("read");
-          		});
-
-          		rssList.appendChild(li);
-        		});
-      		})
-      		.catch(err => console.error("Erreur RSS :", err));
-  		});
-	}
-
-	// Chargement initial
-	loadRSS();
+  document.getElementById("refresh-rss").onclick = loadRSS;
+  loadRSS();
 
 });
