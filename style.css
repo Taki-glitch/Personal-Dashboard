@@ -123,7 +123,7 @@ li:hover {
   overflow-y: auto;
 }
 
-/* En-tête RSS : bouton + titre */
+/* En-tête RSS : titre + emoji */
 .rss-header {
   display: flex;
   align-items: center;
@@ -135,25 +135,26 @@ li:hover {
 #rss-title {
   margin: 0;
   font-size: 18px;
+  font-weight: bold;
   line-height: 1;
-  white-space: nowrap; /* empêche retour à la ligne */
+  white-space: nowrap;
   color: #000;
 }
 
-/* Bouton thème RSS (CORRIGÉ) */
+/* Bouton thème : uniquement emoji */
 #toggle-theme {
-  width: auto;          /* empêche le 100% */
-  margin-top: 0;        /* supprime le décalage */
-  padding: 4px 6px;     /* bouton compact */
-  font-size: 14px;
-  background: #e0e0e0;
+  background: none;
   border: none;
-  border-radius: 6px;
+  padding: 0;
+  margin: 0;
+  font-size: 20px; /* taille emoji */
+  line-height: 1;
   cursor: pointer;
+  transition: transform 0.1s;
 }
 
 #toggle-theme:hover {
-  background: #d0d0d0;
+  transform: scale(1.1);
 }
 
 /* Liste RSS */
@@ -218,7 +219,7 @@ body.dark section {
 }
 
 body.dark #rss-title {
-  color: #ffffff;
+  color: #fff;
 }
 
 body.dark .rss-item a {
@@ -235,12 +236,7 @@ body.dark .rss-meta {
 }
 
 body.dark #toggle-theme {
-  background: #333;
   color: #fff;
-}
-
-body.dark #toggle-theme:hover {
-  background: #444;
 }
 
 /* ===== RESPONSIVE ===== */
