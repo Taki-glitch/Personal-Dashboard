@@ -152,6 +152,11 @@ li:hover {
 }
 
 /* ===== RSS ===== */
+#rss {
+  max-height: 420px;
+  overflow-y: auto;
+}
+
 #rss-list {
   display: flex;
   flex-direction: column;
