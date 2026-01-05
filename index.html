@@ -8,12 +8,13 @@
 </head>
 <body>
 
-<header class="header-top">
-  <div class="header-bar">
-    <h1>Bienvenue !</h1>
-  </div>
+<!-- Bouton thème global -->
+<button id="toggle-theme" aria-label="Changer le thème">🌙</button>
 
-  <!-- BARRE MÉTÉO HORAIRE -->
+<header>
+  <h1>Bienvenue !</h1>
+
+  <!-- BARRE MÉTÉO -->
   <div id="weather-bar">
     <div class="weather-day">
       <div class="weather-title">Aujourd’hui</div>
@@ -35,19 +36,15 @@
     <ul id="task-list"></ul>
   </section>
 
-  <!-- FLUX RSS -->
   <section id="rss">
     <div class="rss-header">
-      <button id="toggle-theme" aria-label="Changer le thème">🌙</button>
       <h2 id="rss-title">Flux RSS</h2>
+      <button id="refresh-rss" title="Actualiser">🔄</button>
     </div>
-
     <ul id="rss-list"></ul>
   </section>
-
 </main>
 
-<!-- IMPORTANT -->
 <script src="config.js"></script>
 <script src="script.js"></script>
 </body>
