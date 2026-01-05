@@ -101,23 +101,37 @@ document.addEventListener("DOMContentLoaded", () => {
   		});
 
   /********** FLUX RSS **********/
-  const rssList = document.getElementById("rss-list");
-  const RSS_FEEDS = [
-    "https://www.lemonde.fr/rss/une.xml",
-    "https://www.francetvinfo.fr/titres.rss"
-  ];
+const rssList = document.getElementById("rss-list");
 
-  RSS_FEEDS.forEach(feed => {
-    fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feed)}`)
-      .then(res => res.json())
-      .then(data => {
-        data.items.slice(0, 5).forEach(item => {
-          const li = document.createElement("li");
-          li.innerHTML = `<a href="${item.link}" target="_blank">${item.title}</a>`;
-          rssList.appendChild(li);
-        });
-      })
-      .catch(err => console.error("Erreur RSS :", err));
-  });
+const RSS_FEEDS = [
+  { url: "https://www.lemonde.fr/rss/une.xml", source: "Le Monde" },
+  { url: "https://www.francetvinfo.fr/titres.rss", source: "France Info" }
+];
+
+RSS_FEEDS.forEach(feed => {
+  fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feed.url)}`)
+    .then(res => res.json())
+    .then(data => {
+      data.items.slice(0, 5).forEach(item => {
+        const li = document.createElement("li");
+        li.className = "rss-item";
+
+        const date = new Date(item.pubDate).toLocaleDateString("fr-FR");
+
+        li.innerHTML = `
+          <a href="${item.link}" target="_blank">
+            <div class="rss-title">${item.title}</div>
+            <div class="rss-meta">
+              <span>${feed.source}</span> • <span>${date}</span>
+            </div>
+          </a>
+        `;
+
+        rssList.appendChild(li);
+      });
+    })
+    .catch(err => console.error("Erreur RSS :", err));
+});
+
 
 });
