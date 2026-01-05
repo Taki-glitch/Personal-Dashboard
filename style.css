@@ -238,3 +238,25 @@ body.dark #toggle-theme {
     max-width: 350px;
   }
 }
+
+/* ===== ARTICLES RSS LUS ===== */
+.rss-item.read a {
+  opacity: 0.55;
+}
+
+.rss-item.read .rss-title {
+  font-weight: normal;
+}
+
+/* ===== BOUTON ACTUALISER RSS ===== */
+#refresh-rss {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 0;
+}
+
+#refresh-rss:hover {
+  transform: rotate(90deg);
+}
