@@ -25,12 +25,19 @@
     <button id="addFlashcard">Ajouter</button>
   </section>
 
-  <!-- Mode révision -->
+  <!-- Révision -->
   <section class="card">
     <h2>🎴 Révision</h2>
 
+    <div class="review-filters">
+      <button data-pack="all">🎯 Intelligent</button>
+      <button data-pack="new">🆕 Nouveaux</button>
+      <button data-pack="review">🔁 À revoir</button>
+      <button data-pack="known">⭐ Maîtrisés</button>
+    </div>
+
     <div id="reviewCard">
-      <p id="reviewRusse">Clique sur « Commencer »</p>
+      <p id="reviewRusse">Choisis un paquet</p>
       <p id="reviewFrancais" style="display:none;"></p>
     </div>
 
@@ -40,11 +47,9 @@
       <button id="know">✅ Je savais</button>
       <button id="dontKnow">❌ Je ne savais pas</button>
     </div>
-
-    <button id="startReview">▶ Commencer la révision</button>
   </section>
 
-  <!-- Liste des flashcards -->
+  <!-- Liste -->
   <section class="card">
     <h2>📋 Mes flashcards</h2>
     <ul id="flashcardsList"></ul>
