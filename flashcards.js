@@ -14,6 +14,12 @@ function todayISO() {
   return new Date().toISOString().split("T")[0];
 }
 
+function daysFromNow(days) {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  return d.toISOString().split("T")[0];
+}
+
 /* =====================================
    STOCKAGE
 ===================================== */
@@ -39,7 +45,10 @@ function createFlashcard(russe, francais, tags = []) {
     erreurs: 0,
     interval: 1,
     ease: 2.5,
-    nextReview: todayISO()
+    nextReview: todayISO(),
+    stats: {
+      history: []
+    }
   };
 }
 
@@ -55,36 +64,32 @@ function getCardsToReview(cards) {
    SRS – NOTATION 0 / 1 / 2
 ===================================== */
 function applyGrade(card, grade) {
+  if (!card) return;
+
+  const prevInterval = card.interval;
+
   if (grade === 0) {
     card.erreurs++;
     card.repetitions = 0;
     card.interval = 1;
     card.ease = Math.max(1.3, card.ease - 0.2);
-
-    const d = new Date();
-    d.setDate(d.getDate() + 1);
-    card.nextReview = d.toISOString().split("T")[0];
-  }
-
-  if (grade === 1) {
+  } else if (grade === 1) {
     card.repetitions++;
     card.interval = Math.max(1, Math.round(card.interval * 1.5));
     card.ease = Math.max(1.3, card.ease - 0.05);
-
-    const d = new Date();
-    d.setDate(d.getDate() + card.interval);
-    card.nextReview = d.toISOString().split("T")[0];
-  }
-
-  if (grade === 2) {
+  } else if (grade === 2) {
     card.repetitions++;
     card.interval = Math.round(card.interval * card.ease);
     card.ease += 0.1;
-
-    const d = new Date();
-    d.setDate(d.getDate() + card.interval);
-    card.nextReview = d.toISOString().split("T")[0];
   }
+
+  card.nextReview = daysFromNow(card.interval);
+
+  card.stats.history.push({
+    date: todayISO(),
+    grade,
+    prevInterval
+  });
 }
 
 /* =====================================
@@ -190,7 +195,17 @@ function filterByTag(cards) {
    PAQUET DE RÉVISION
 ===================================== */
 function generatePack() {
-  return filterByTag(getCardsToReview(flashcards));
+  let pack = getCardsToReview(flashcards);
+  pack = filterByTag(pack);
+
+  // Tri par difficulté (préparation étape 4)
+  pack.sort((a, b) => {
+    const scoreA = a.erreurs / (a.repetitions || 1);
+    const scoreB = b.erreurs / (b.repetitions || 1);
+    return scoreB - scoreA;
+  });
+
+  return pack;
 }
 
 /* =====================================
@@ -213,6 +228,8 @@ function startPack() {
 
 function showCard() {
   currentCard = reviewPack[currentIndex];
+  if (!currentCard) return;
+
   document.getElementById("reviewRusse").textContent = currentCard.russe;
   document.getElementById("reviewFrancais").style.display = "none";
   document.getElementById("reviewActions").style.display = "none";
@@ -259,9 +276,9 @@ function updateChart() {
     data: {
       labels,
       datasets: [
-        { label: "Révisées", data: revisited },
-        { label: "Réussites", data: success },
-        { label: "Échecs", data: fail }
+        { label: "Révisées", data: revisited, backgroundColor: "#3498db" },
+        { label: "Réussites", data: success, backgroundColor: "#2ecc71" },
+        { label: "Échecs", data: fail, backgroundColor: "#e74c3c" }
       ]
     },
     options: {
