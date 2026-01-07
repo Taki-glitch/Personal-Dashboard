@@ -1,12 +1,14 @@
+/* =====================================
+   Variables globales
+===================================== */
 let flashcards = [];
 let reviewPack = [];
 let currentIndex = 0;
 let currentCard = null;
 
-/* =========================
-   Stockage
-========================= */
-
+/* =====================================
+   Stockage local
+===================================== */
 function loadFlashcards() {
   const data = localStorage.getItem("flashcards");
   flashcards = data ? JSON.parse(data) : [];
@@ -16,10 +18,9 @@ function saveFlashcards() {
   localStorage.setItem("flashcards", JSON.stringify(flashcards));
 }
 
-/* =========================
+/* =====================================
    Statistiques
-========================= */
-
+===================================== */
 function updateStats() {
   const total = flashcards.length;
   const nouveaux = flashcards.filter(c => c.niveau === 0).length;
@@ -28,15 +29,12 @@ function updateStats() {
 
   let repetitions = 0;
   let erreurs = 0;
-
   flashcards.forEach(c => {
     repetitions += c.repetitions;
     erreurs += c.erreurs;
   });
 
-  const succes = repetitions === 0
-    ? 0
-    : Math.round(((repetitions - erreurs) / repetitions) * 100);
+  const succes = repetitions === 0 ? 0 : Math.round(((repetitions - erreurs) / repetitions) * 100);
 
   document.getElementById("stat-total").textContent = total;
   document.getElementById("stat-new").textContent = nouveaux;
@@ -45,10 +43,9 @@ function updateStats() {
   document.getElementById("stat-success").textContent = succes + "%";
 }
 
-/* =========================
-   Affichage liste
-========================= */
-
+/* =====================================
+   Affichage de la liste
+===================================== */
 function displayFlashcards() {
   const list = document.getElementById("flashcardsList");
   list.innerHTML = "";
@@ -65,10 +62,9 @@ function displayFlashcards() {
   });
 }
 
-/* =========================
-   Ajout
-========================= */
-
+/* =====================================
+   Ajout d'une flashcard
+===================================== */
 document.getElementById("addFlashcard").addEventListener("click", () => {
   const russe = document.getElementById("russe").value.trim();
   const francais = document.getElementById("francais").value.trim();
@@ -81,6 +77,7 @@ document.getElementById("addFlashcard").addEventListener("click", () => {
     repetitions: 0,
     erreurs: 0,
     niveau: 0,
+    interval: 1,           // intervalle en jours pour SRS
     dernierPassage: null
   });
 
@@ -92,21 +89,40 @@ document.getElementById("addFlashcard").addEventListener("click", () => {
   document.getElementById("francais").value = "";
 });
 
-/* =========================
-   Paquets
-========================= */
+/* =====================================
+   Répétition espacée – SRS
+===================================== */
+// Retourne les cartes à revoir aujourd'hui
+function getDueCards(cards) {
+  const today = new Date();
+  return cards.filter(card => {
+    if (!card.dernierPassage) return true; // jamais révisée
+    const last = new Date(card.dernierPassage);
+    const diffDays = (today - last) / (1000 * 60 * 60 * 24);
+    return diffDays >= card.interval;
+  });
+}
 
+/* =====================================
+   Paquets intelligents
+===================================== */
 function generatePack(type) {
+  let pack;
   switch (type) {
     case "new":
-      return flashcards.filter(c => c.niveau === 0);
+      pack = flashcards.filter(c => c.niveau === 0);
+      break;
     case "review":
-      return flashcards.filter(c => c.erreurs > 0 && c.niveau < 3);
+      pack = flashcards.filter(c => c.erreurs > 0 && c.niveau < 3);
+      break;
     case "known":
-      return flashcards.filter(c => c.niveau >= 3);
+      pack = flashcards.filter(c => c.niveau >= 3);
+      break;
     default:
-      return flashcards.filter(c => c.niveau < 2 || c.erreurs > 1);
+      pack = flashcards.filter(c => c.niveau < 2 || c.erreurs > 1);
+      break;
   }
+  return getDueCards(pack);
 }
 
 function startPack(type) {
@@ -141,10 +157,9 @@ function nextCard() {
   showCard();
 }
 
-/* =========================
+/* =====================================
    Boutons
-========================= */
-
+===================================== */
 document.querySelectorAll(".review-filters button").forEach(btn => {
   btn.addEventListener("click", () => startPack(btn.dataset.pack));
 });
@@ -158,6 +173,7 @@ document.getElementById("showAnswer").addEventListener("click", () => {
 document.getElementById("know").addEventListener("click", () => {
   currentCard.repetitions++;
   currentCard.niveau++;
+  currentCard.interval *= 2; // double l'intervalle
   currentCard.dernierPassage = new Date().toISOString();
 
   saveFlashcards();
@@ -170,6 +186,7 @@ document.getElementById("dontKnow").addEventListener("click", () => {
   currentCard.repetitions++;
   currentCard.erreurs++;
   currentCard.niveau = Math.max(0, currentCard.niveau - 1);
+  currentCard.interval = 1; // revoir très vite
   currentCard.dernierPassage = new Date().toISOString();
 
   saveFlashcards();
@@ -178,10 +195,9 @@ document.getElementById("dontKnow").addEventListener("click", () => {
   nextCard();
 });
 
-/* =========================
-   Init
-========================= */
-
+/* =====================================
+   Initialisation
+===================================== */
 loadFlashcards();
 displayFlashcards();
 updateStats();
