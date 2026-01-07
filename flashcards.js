@@ -1,11 +1,11 @@
 /* =====================================
    VARIABLES GLOBALES
 ===================================== */
-let flashcards = [];       // Toutes les flashcards
-let reviewPack = [];       // Paquet de révision actuel
-let currentIndex = 0;      // Index de la carte affichée
-let currentCard = null;    // Carte actuellement affichée
-let dailyGoal = 10;        // Objectif journalier de révisions
+let flashcards = [];
+let reviewPack = [];
+let currentIndex = 0;
+let currentCard = null;
+let dailyGoal = 10;
 
 /* =====================================
    UTILITAIRES DATE
@@ -37,8 +37,8 @@ function createFlashcard(russe, francais, tags = []) {
     tags,
     repetitions: 0,
     erreurs: 0,
-    interval: 1,  // intervalle pour SRS
-    ease: 2.5,    // facteur d'aisance pour SRS
+    interval: 1,
+    ease: 2.5,
     nextReview: todayISO()
   };
 }
@@ -56,25 +56,26 @@ function getCardsToReview(cards) {
 ===================================== */
 function applyGrade(card, grade) {
   const d = new Date();
-
-  if (grade === 0) { // Faux
+  if (grade === 0) {
+    // Faux
     card.erreurs++;
     card.repetitions = 0;
     card.interval = 1;
     card.ease = Math.max(1.3, card.ease - 0.2);
     d.setDate(d.getDate() + 1);
-  } else if (grade === 1) { // Difficile
+  } else if (grade === 1) {
+    // Difficile
     card.repetitions++;
     card.interval = Math.max(1, Math.round(card.interval * 1.5));
     card.ease = Math.max(1.3, card.ease - 0.05);
     d.setDate(d.getDate() + card.interval);
-  } else if (grade === 2) { // Correct
+  } else if (grade === 2) {
+    // Correct
     card.repetitions++;
     card.interval = Math.round(card.interval * card.ease);
     card.ease += 0.1;
     d.setDate(d.getDate() + card.interval);
   }
-
   card.nextReview = d.toISOString().split("T")[0];
 }
 
@@ -98,7 +99,7 @@ function updateStats() {
   document.getElementById("stat-known").textContent = maitrises;
   document.getElementById("stat-success").textContent = success + "%";
 
-  updatePerformanceDashboard(); // Met à jour le dashboard
+  updatePerformanceDashboard();
 }
 
 /* =====================================
@@ -116,6 +117,24 @@ function displayFlashcards() {
   flashcards.forEach(card => {
     const li = document.createElement("li");
     li.textContent = `${card.russe} → ${card.francais} [${card.tags.join(", ")}]`;
+
+    // Bouton supprimer individuellement
+    const delBtn = document.createElement("button");
+    delBtn.textContent = "❌";
+    delBtn.style.marginLeft = "10px";
+    delBtn.addEventListener("click", () => {
+      if (confirm("Supprimer cette flashcard ?")) {
+        flashcards = flashcards.filter(c => c.id !== card.id);
+        saveFlashcards();
+        displayFlashcards();
+        updateStats();
+        updateChart();
+        updateTagFilter();
+        updatePerformanceDashboard();
+      }
+    });
+    li.appendChild(delBtn);
+
     list.appendChild(li);
   });
 }
@@ -138,7 +157,6 @@ document.getElementById("addFlashcard").addEventListener("click", () => {
   updateChart();
   updateTagFilter();
 
-  // Reset des champs
   document.getElementById("russe").value = "";
   document.getElementById("francais").value = "";
   document.getElementById("tags").value = "";
@@ -179,7 +197,9 @@ function generatePack(type = "intelligent") {
     case "new": pack = flashcards.filter(c => c.repetitions === 0); break;
     case "review": pack = flashcards.filter(c => c.nextReview <= today && c.repetitions > 0); break;
     case "known": pack = flashcards.filter(c => c.repetitions >= 5); break;
-    default: pack = getCardsToReview(flashcards); break; // intelligent
+    default:
+      pack = getCardsToReview(flashcards);
+      break;
   }
   return filterByTag(pack);
 }
@@ -188,6 +208,7 @@ function generatePack(type = "intelligent") {
    SESSION DE RÉVISION
 ===================================== */
 function startPack(type) {
+  // Mettre bouton actif
   document.querySelectorAll(".review-filters button").forEach(btn => btn.classList.remove("active"));
   document.querySelector(`.review-filters button[data-pack="${type}"]`)?.classList.add("active");
 
@@ -221,7 +242,7 @@ function nextCard() {
 }
 
 /* =====================================
-   LOG & CHART
+   LOG, DASHBOARD ET CHART
 ===================================== */
 function logRevision(grade) {
   const log = JSON.parse(localStorage.getItem("revisionLog") || "{}");
@@ -231,12 +252,9 @@ function logRevision(grade) {
   grade === 2 ? log[today].success++ : log[today].fail++;
   localStorage.setItem("revisionLog", JSON.stringify(log));
 
-  updatePerformanceDashboard(); // MAJ dashboard
+  updatePerformanceDashboard();
 }
 
-/* =====================================
-   CHART PROGRESSION QUOTIDIENNE
-===================================== */
 function updateChart() {
   const log = JSON.parse(localStorage.getItem("revisionLog") || "{}");
   const labels = Object.keys(log).sort();
@@ -260,9 +278,6 @@ function updateChart() {
   });
 }
 
-/* =====================================
-   DASHBOARD PERFORMANCE & SUGGESTIONS
-===================================== */
 function updatePerformanceDashboard() {
   const log = JSON.parse(localStorage.getItem("revisionLog") || "{}");
   const today = todayISO();
@@ -320,7 +335,6 @@ document.getElementById("dontKnow").addEventListener("click", () => {
   saveFlashcards();
   logRevision(0);
   updateStats();
-  updatePerformanceDashboard();
   updateChart();
   nextCard();
 });
@@ -331,7 +345,6 @@ document.getElementById("hard").addEventListener("click", () => {
   saveFlashcards();
   logRevision(1);
   updateStats();
-  updatePerformanceDashboard();
   updateChart();
   nextCard();
 });
@@ -342,14 +355,10 @@ document.getElementById("know").addEventListener("click", () => {
   saveFlashcards();
   logRevision(2);
   updateStats();
-  updatePerformanceDashboard();
   updateChart();
   nextCard();
 });
 
-/* =====================================
-   FILTRE & BOUTONS PAQUETS
-===================================== */
 document.querySelectorAll(".review-filters button").forEach(btn => {
   btn.addEventListener("click", () => startPack(btn.dataset.pack));
 });
@@ -360,6 +369,60 @@ document.getElementById("tagFilter").addEventListener("change", () => {
 });
 
 /* =====================================
+   IMPORT / EXPORT / CLEAR FLASHCARDS
+===================================== */
+document.getElementById("exportFlashcards").addEventListener("click", () => {
+  const dataStr = JSON.stringify(flashcards, null, 2);
+  const blob = new Blob([dataStr], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `flashcards_${todayISO()}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+document.getElementById("btnImportFlashcards").addEventListener("click", () => {
+  document.getElementById("importFlashcards").click();
+});
+
+document.getElementById("importFlashcards").addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(evt) {
+    try {
+      const imported = JSON.parse(evt.target.result);
+      if (!Array.isArray(imported)) throw "Format invalide";
+      flashcards = flashcards.concat(imported);
+      saveFlashcards();
+      displayFlashcards();
+      updateStats();
+      updateChart();
+      updateTagFilter();
+      alert("Importation réussie !");
+    } catch(err) {
+      alert("Erreur à l'importation : " + err);
+    }
+  };
+  reader.readAsText(file);
+});
+
+document.getElementById("clearFlashcards").addEventListener("click", () => {
+  if (confirm("Supprimer toutes les flashcards ?")) {
+    flashcards = [];
+    saveFlashcards();
+    displayFlashcards();
+    updateStats();
+    updateChart();
+    updateTagFilter();
+    updatePerformanceDashboard();
+  }
+});
+
+/* =====================================
    INITIALISATION
 ===================================== */
 loadFlashcards();
@@ -367,4 +430,3 @@ displayFlashcards();
 updateStats();
 updateChart();
 updateTagFilter();
-updatePerformanceDashboard(); // <-- dashboard initialisé
