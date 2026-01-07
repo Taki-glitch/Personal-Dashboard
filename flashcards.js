@@ -17,6 +17,35 @@ function saveFlashcards() {
 }
 
 /* =========================
+   Statistiques
+========================= */
+
+function updateStats() {
+  const total = flashcards.length;
+  const nouveaux = flashcards.filter(c => c.niveau === 0).length;
+  const aRevoir = flashcards.filter(c => c.erreurs > 0 && c.niveau < 3).length;
+  const maitrises = flashcards.filter(c => c.niveau >= 3).length;
+
+  let repetitions = 0;
+  let erreurs = 0;
+
+  flashcards.forEach(c => {
+    repetitions += c.repetitions;
+    erreurs += c.erreurs;
+  });
+
+  const succes = repetitions === 0
+    ? 0
+    : Math.round(((repetitions - erreurs) / repetitions) * 100);
+
+  document.getElementById("stat-total").textContent = total;
+  document.getElementById("stat-new").textContent = nouveaux;
+  document.getElementById("stat-review").textContent = aRevoir;
+  document.getElementById("stat-known").textContent = maitrises;
+  document.getElementById("stat-success").textContent = succes + "%";
+}
+
+/* =========================
    Affichage liste
 ========================= */
 
@@ -43,7 +72,6 @@ function displayFlashcards() {
 document.getElementById("addFlashcard").addEventListener("click", () => {
   const russe = document.getElementById("russe").value.trim();
   const francais = document.getElementById("francais").value.trim();
-
   if (!russe || !francais) return;
 
   flashcards.push({
@@ -58,13 +86,14 @@ document.getElementById("addFlashcard").addEventListener("click", () => {
 
   saveFlashcards();
   displayFlashcards();
+  updateStats();
 
   document.getElementById("russe").value = "";
   document.getElementById("francais").value = "";
 });
 
 /* =========================
-   Paquets intelligents
+   Paquets
 ========================= */
 
 function generatePack(type) {
@@ -104,25 +133,20 @@ function showCard() {
 
 function nextCard() {
   currentIndex++;
-
   if (currentIndex >= reviewPack.length) {
     document.getElementById("reviewRusse").textContent = "🎉 Révision terminée !";
-    document.getElementById("reviewFrancais").style.display = "none";
     document.getElementById("reviewActions").style.display = "none";
     return;
   }
-
   showCard();
 }
 
 /* =========================
-   Boutons UI
+   Boutons
 ========================= */
 
 document.querySelectorAll(".review-filters button").forEach(btn => {
-  btn.addEventListener("click", () => {
-    startPack(btn.dataset.pack);
-  });
+  btn.addEventListener("click", () => startPack(btn.dataset.pack));
 });
 
 document.getElementById("showAnswer").addEventListener("click", () => {
@@ -138,6 +162,7 @@ document.getElementById("know").addEventListener("click", () => {
 
   saveFlashcards();
   displayFlashcards();
+  updateStats();
   nextCard();
 });
 
@@ -149,12 +174,14 @@ document.getElementById("dontKnow").addEventListener("click", () => {
 
   saveFlashcards();
   displayFlashcards();
+  updateStats();
   nextCard();
 });
 
 /* =========================
-   Initialisation
+   Init
 ========================= */
 
 loadFlashcards();
 displayFlashcards();
+updateStats();
