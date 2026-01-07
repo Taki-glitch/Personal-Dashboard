@@ -1,112 +1,99 @@
 /* =====================================
    VARIABLES GLOBALES
 ===================================== */
-// Liste complète des flashcards
-let flashcards = [];
-// Paquet de révision actif
-let reviewPack = [];
-// Index de la carte courante
-let currentIndex = 0;
-// Carte actuellement affichée
-let currentCard = null;
-// Objectif quotidien (nombre de cartes à réviser)
-let dailyGoal = 10;
+let flashcards = [];      // Toutes les flashcards
+let reviewPack = [];      // Paquet de révision courant
+let currentIndex = 0;     // Index de la carte actuelle
+let currentCard = null;   // Carte en cours
+let dailyGoal = 10;       // Objectif journalier
 
 /* =====================================
-   UTILITAIRES DE DATE
+   UTILITAIRES DATE
 ===================================== */
-// Renvoie la date d'aujourd'hui au format ISO (YYYY-MM-DD)
 function todayISO() {
   return new Date().toISOString().split("T")[0];
 }
 
-// Renvoie la date d'aujourd'hui + X jours au format ISO
-function daysFromNow(days) {
+function daysFromNow(n) {
   const d = new Date();
-  d.setDate(d.getDate() + days);
+  d.setDate(d.getDate() + n);
   return d.toISOString().split("T")[0];
 }
 
 /* =====================================
    STOCKAGE LOCAL
 ===================================== */
-// Charger les flashcards depuis localStorage
 function loadFlashcards() {
   const data = localStorage.getItem("flashcards");
   flashcards = data ? JSON.parse(data) : [];
 }
 
-// Sauvegarder les flashcards dans localStorage
 function saveFlashcards() {
   localStorage.setItem("flashcards", JSON.stringify(flashcards));
 }
 
 /* =====================================
-   CRÉATION D'UNE FLASHCARD (SRS)
+   CRÉATION D'UNE FLASHCARD
 ===================================== */
-// Création d'une nouvelle flashcard avec les champs nécessaires pour SRS
 function createFlashcard(russe, francais, tags = []) {
   return {
     id: Date.now(),
     russe,
     francais,
     tags,
-    repetitions: 0,       // nombre de répétitions réussies
-    erreurs: 0,           // nombre d'erreurs
-    interval: 1,          // intervalle avant la prochaine révision
-    ease: 2.5,            // facteur de facilité pour SRS
-    nextReview: todayISO(),// date de la prochaine révision
-    stats: {
-      history: []          // historique des notes pour cette carte
-    }
+    repetitions: 0,
+    erreurs: 0,
+    interval: 1,    // Intervalle en jours pour SRS
+    ease: 2.5,      // Facteur d'espacement
+    nextReview: todayISO()
   };
 }
 
 /* =====================================
    SRS – CARTES À RÉVISER
 ===================================== */
-// Renvoie les cartes dont la date de révision est <= aujourd'hui
 function getCardsToReview(cards) {
   const today = todayISO();
   return cards.filter(c => c.nextReview <= today);
 }
 
 /* =====================================
-   SRS – APPLICATION DU GRADE (0 = difficile, 1 = moyen, 2 = facile)
+   SRS – NOTATION 0 / 1 / 2
+   0 = Je ne connais pas
+   1 = Difficile
+   2 = Je connais
 ===================================== */
 function applyGrade(card, grade) {
-  if (!card) return;
+  const d = new Date();
 
-  const prevInterval = card.interval; // sauvegarde pour stats
-
-  if (grade === 0) { // difficile / je ne sais pas
+  if (grade === 0) { // Erreur
     card.erreurs++;
     card.repetitions = 0;
     card.interval = 1;
     card.ease = Math.max(1.3, card.ease - 0.2);
-  } else if (grade === 1) { // moyen / dur
+    d.setDate(d.getDate() + 1);
+    card.nextReview = d.toISOString().split("T")[0];
+  }
+
+  if (grade === 1) { // Difficile
     card.repetitions++;
     card.interval = Math.max(1, Math.round(card.interval * 1.5));
     card.ease = Math.max(1.3, card.ease - 0.05);
-  } else if (grade === 2) { // facile / je sais
+    d.setDate(d.getDate() + card.interval);
+    card.nextReview = d.toISOString().split("T")[0];
+  }
+
+  if (grade === 2) { // Connu
     card.repetitions++;
     card.interval = Math.round(card.interval * card.ease);
     card.ease += 0.1;
+    d.setDate(d.getDate() + card.interval);
+    card.nextReview = d.toISOString().split("T")[0];
   }
-
-  // Mise à jour de la prochaine révision
-  card.nextReview = daysFromNow(card.interval);
-
-  // Historique pour stats détaillées
-  card.stats.history.push({
-    date: todayISO(),
-    grade,
-    prevInterval
-  });
 }
 
 /* =====================================
-   STATISTIQUES GÉNÉRALES
+   STATISTIQUES
 ===================================== */
 function updateStats() {
   const total = flashcards.length;
@@ -117,10 +104,7 @@ function updateStats() {
   const maitrises = flashcards.filter(c => c.repetitions >= 5).length;
 
   let reps = 0, errs = 0;
-  flashcards.forEach(c => {
-    reps += c.repetitions;
-    errs += c.erreurs;
-  });
+  flashcards.forEach(c => { reps += c.repetitions; errs += c.erreurs; });
 
   const success = reps === 0 ? 0 : Math.round(((reps - errs) / reps) * 100);
 
@@ -132,7 +116,7 @@ function updateStats() {
 }
 
 /* =====================================
-   AFFICHAGE LISTE DE FLASHCARDS
+   AFFICHAGE LISTE
 ===================================== */
 function displayFlashcards() {
   const list = document.getElementById("flashcardsList");
@@ -151,7 +135,7 @@ function displayFlashcards() {
 }
 
 /* =====================================
-   AJOUT D'UNE FLASHCARD
+   AJOUT FLASHCARD
 ===================================== */
 document.getElementById("addFlashcard").addEventListener("click", () => {
   const russe = document.getElementById("russe").value.trim();
@@ -168,6 +152,7 @@ document.getElementById("addFlashcard").addEventListener("click", () => {
   updateStats();
   updateChart();
   updateTagFilter();
+  updateDashboard();
 
   document.getElementById("russe").value = "";
   document.getElementById("francais").value = "";
@@ -175,7 +160,7 @@ document.getElementById("addFlashcard").addEventListener("click", () => {
 });
 
 /* =====================================
-   TAGS & FILTRAGE
+   FILTRAGE PAR TAG
 ===================================== */
 function updateTagFilter() {
   const select = document.getElementById("tagFilter");
@@ -202,117 +187,31 @@ function filterByTag(cards) {
 }
 
 /* =====================================
-   PAQUETS INTELLIGENTS
+   PAQUET DE RÉVISION
 ===================================== */
-function generatePack(type = "review") {
-  let pack = [];
-
-  switch (type) {
-    case "new":
-      pack = flashcards.filter(c => c.repetitions === 0);
-      break;
-    case "review":
-      pack = flashcards.filter(c => c.repetitions > 0 && c.nextReview <= todayISO());
-      break;
-    case "known":
-      pack = flashcards.filter(c => c.repetitions >= 5);
-      break;
-    default:
-      pack = flashcards.filter(c => c.nextReview <= todayISO());
-      break;
-  }
-
-  // Filtre par tag
-  pack = filterByTag(pack);
-
-  // Tri par difficulté (plus d'erreurs → priorité)
-  pack.sort((a, b) => {
-    const scoreA = a.erreurs / (a.repetitions || 1);
-    const scoreB = b.erreurs / (b.repetitions || 1);
-    return scoreB - scoreA;
-  });
-
-  return pack;
+function generatePack() {
+  return filterByTag(getCardsToReview(flashcards));
 }
 
 /* =====================================
-   SUGGESTIONS QUOTIDIENNES – ÉTAPE 5
+   SESSION DE RÉVISION
 ===================================== */
-function getDailyPack(goal = dailyGoal) {
-  const today = todayISO();
-  let reviewCards = flashcards.filter(c => c.nextReview <= today && c.repetitions > 0);
-  reviewCards.sort((a, b) => (b.erreurs / (b.repetitions || 1)) - (a.erreurs / (a.repetitions || 1)));
-
-  let newCards = flashcards.filter(c => c.repetitions === 0);
-
-  let pack = [];
-  let remaining = goal;
-
-  pack = reviewCards.slice(0, remaining);
-  remaining -= pack.length;
-
-  if (remaining > 0) {
-    pack = pack.concat(newCards.slice(0, remaining));
-  }
-
-  return pack;
-}
-
-function showDailySummary() {
-  const today = todayISO();
-  const reviewCards = flashcards.filter(c => c.nextReview <= today && c.repetitions > 0);
-  const newCards = flashcards.filter(c => c.repetitions === 0);
-
-  const summaryEl = document.getElementById("dailySummary");
-  if (!summaryEl) return;
-
-  summaryEl.innerHTML = `
-    <p>📝 Cartes à revoir aujourd'hui : ${reviewCards.length}</p>
-    <p>🌱 Nouvelles cartes : ${newCards.length}</p>
-    <p>🎯 Objectif du jour : ${dailyGoal} cartes</p>
-  `;
-}
-
-function updateDailyProgress() {
-  const today = todayISO();
-  const log = JSON.parse(localStorage.getItem("revisionLog") || "{}");
-  const revisitedToday = log[today] ? log[today].revisited : 0;
-
-  const progressEl = document.getElementById("dailyProgress");
-  if (!progressEl) return;
-
-  progressEl.textContent = `Progrès aujourd'hui : ${revisitedToday} / ${dailyGoal}`;
-}
-
-/* =====================================
-   SESSION
-===================================== */
-function startPack(type = "review") {
-  if(type === "daily") {
-    reviewPack = getDailyPack(dailyGoal);
-  } else {
-    reviewPack = generatePack(type);
-  }
-
+function startPack() {
+  reviewPack = generatePack();
   currentIndex = 0;
 
   if (reviewPack.length === 0) {
-    document.getElementById("reviewRusse").textContent =
-      "🎉 Aucune carte à réviser aujourd’hui";
+    document.getElementById("reviewRusse").textContent = "🎉 Aucune carte à réviser aujourd’hui";
     document.getElementById("reviewFrancais").style.display = "none";
     document.getElementById("reviewActions").style.display = "none";
     return;
   }
 
-  showDailySummary();
-  updateDailyProgress();
   showCard();
 }
 
 function showCard() {
   currentCard = reviewPack[currentIndex];
-  if (!currentCard) return;
-
   document.getElementById("reviewRusse").textContent = currentCard.russe;
   document.getElementById("reviewFrancais").style.display = "none";
   document.getElementById("reviewActions").style.display = "none";
@@ -323,7 +222,7 @@ function nextCard() {
   if (currentIndex >= reviewPack.length) {
     document.getElementById("reviewRusse").textContent = "🎉 Révision terminée !";
     document.getElementById("reviewActions").style.display = "none";
-    updateDailyProgress();
+    updateDashboard();
     return;
   }
   showCard();
@@ -341,7 +240,6 @@ function logRevision(grade) {
   grade === 2 ? log[today].success++ : log[today].fail++;
 
   localStorage.setItem("revisionLog", JSON.stringify(log));
-  updateDailyProgress();
 }
 
 function updateChart() {
@@ -365,7 +263,58 @@ function updateChart() {
         { label: "Échecs", data: fail, backgroundColor: "#e74c3c" }
       ]
     },
-    options: { responsive: true, scales: { y: { beginAtZero: true } } }
+    options: {
+      responsive: true,
+      scales: { y: { beginAtZero: true } }
+    }
+  });
+}
+
+/* =====================================
+   DASHBOARD PERFORMANCE & SUGGESTIONS
+===================================== */
+function updateDashboard() {
+  const today = todayISO();
+  const log = JSON.parse(localStorage.getItem("revisionLog") || "{}");
+
+  // Statistiques d'aujourd'hui
+  const revisited = log[today] ? log[today].revisited : 0;
+  const success = log[today] ? log[today].success : 0;
+  const fail = log[today] ? log[today].fail : 0;
+
+  document.getElementById("todayRevised").textContent = `Cartes révisées aujourd'hui : ${revisited}`;
+  document.getElementById("todaySuccess").textContent = `Réussites : ${success} / Échecs : ${fail}`;
+
+  // Cartes prioritaires demain
+  const tomorrow = daysFromNow(1);
+  const priority = flashcards
+    .filter(c => c.nextReview <= tomorrow)
+    .sort((a,b) => (b.erreurs/(b.repetitions||1)) - (a.erreurs/(a.repetitions||1)))
+    .slice(0, 10);
+
+  const priorityList = document.getElementById("priorityList");
+  priorityList.innerHTML = "";
+  priority.forEach(c => {
+    const li = document.createElement("li");
+    li.textContent = `${c.russe} → ${c.francais} [${c.tags.join(', ')}]`;
+    priorityList.appendChild(li);
+  });
+
+  // Progrès par tag
+  const tagMap = {};
+  flashcards.forEach(c => c.tags.forEach(tag => {
+    if (!tagMap[tag]) tagMap[tag] = { total:0, done:0 };
+    tagMap[tag].total++;
+    if (c.repetitions > 0) tagMap[tag].done++;
+  }));
+
+  const tagList = document.getElementById("tagList");
+  tagList.innerHTML = "";
+  Object.keys(tagMap).sort().forEach(tag => {
+    const { total, done } = tagMap[tag];
+    const li = document.createElement("li");
+    li.textContent = `${tag}: ${done} / ${total}`;
+    tagList.appendChild(li);
   });
 }
 
@@ -373,7 +322,6 @@ function updateChart() {
    BOUTONS RÉVISION
 ===================================== */
 document.getElementById("showAnswer").addEventListener("click", () => {
-  if (!currentCard) return;
   document.getElementById("reviewFrancais").textContent = currentCard.francais;
   document.getElementById("reviewFrancais").style.display = "block";
   document.getElementById("reviewActions").style.display = "block";
@@ -385,6 +333,7 @@ document.getElementById("dontKnow").addEventListener("click", () => {
   logRevision(0);
   updateStats();
   updateChart();
+  updateDashboard();
   nextCard();
 });
 
@@ -394,6 +343,7 @@ document.getElementById("hard").addEventListener("click", () => {
   logRevision(1);
   updateStats();
   updateChart();
+  updateDashboard();
   nextCard();
 });
 
@@ -403,35 +353,18 @@ document.getElementById("know").addEventListener("click", () => {
   logRevision(2);
   updateStats();
   updateChart();
+  updateDashboard();
   nextCard();
 });
 
-/* =====================================
-   BOUTONS PAQUETS
-===================================== */
-document.querySelectorAll(".review-filters button").forEach(btn => {
-  btn.addEventListener("click", () => {
-    document.querySelectorAll(".review-filters button").forEach(b => b.classList.remove("active"));
-    btn.classList.add("active");
-    startPack(btn.dataset.pack);
-  });
-});
+document.getElementById("tagFilter").addEventListener("change", startPack);
 
 /* =====================================
-   FILTRE TAG CHANGE
-===================================== */
-document.getElementById("tagFilter").addEventListener("change", () => {
-  const activeBtn = document.querySelector(".review-filters button.active");
-  startPack(activeBtn ? activeBtn.dataset.pack : "review");
-});
-
-/* =====================================
-   INITIALISATION
+   INIT
 ===================================== */
 loadFlashcards();
 displayFlashcards();
 updateStats();
 updateChart();
 updateTagFilter();
-showDailySummary();
-updateDailyProgress();
+updateDashboard();
