@@ -15,7 +15,7 @@
 
 <main>
 
-  <!-- Formulaire ajout flashcard -->
+  <!-- Ajout de flashcard -->
   <section class="card">
     <h2>➕ Ajouter une flashcard</h2>
 
@@ -23,6 +23,25 @@
     <input type="text" id="francais" placeholder="Traduction française">
 
     <button id="addFlashcard">Ajouter</button>
+  </section>
+
+  <!-- Mode révision -->
+  <section class="card">
+    <h2>🎴 Révision</h2>
+
+    <div id="reviewCard">
+      <p id="reviewRusse">Clique sur « Commencer »</p>
+      <p id="reviewFrancais" style="display:none;"></p>
+    </div>
+
+    <button id="showAnswer">👁️ Voir la traduction</button>
+
+    <div id="reviewActions" style="display:none;">
+      <button id="know">✅ Je savais</button>
+      <button id="dontKnow">❌ Je ne savais pas</button>
+    </div>
+
+    <button id="startReview">▶ Commencer la révision</button>
   </section>
 
   <!-- Liste des flashcards -->
