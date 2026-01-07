@@ -134,9 +134,27 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     };
 
-    /* --- INIT --- */
+    /* ==== BOUTON MENU ==== */
     renderTasks();
     fetchWeather();
     loadRSS();
     document.getElementById("refresh-rss").onclick = loadRSS;
+    
+    const menuBtn = document.getElementById("menu-btn");
+	const sideMenu = document.getElementById("side-menu");
+	const closeMenu = document.getElementById("close-menu");
+	const overlay = document.getElementById("overlay");
+
+	menuBtn.addEventListener("click", () => {
+  		sideMenu.classList.add("open");
+  		overlay.classList.add("show");
+	});
+
+	closeMenu.addEventListener("click", closeMenuFn);
+	overlay.addEventListener("click", closeMenuFn);
+
+	function closeMenuFn() {
+  		sideMenu.classList.remove("open");
+  		overlay.classList.remove("show");
+	}
 });
