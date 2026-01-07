@@ -74,6 +74,7 @@ body {
 
 #side-menu li {
   margin: 15px 0;
+  border-bottom: none; /* Pas de bordure dans le menu */
 }
 
 #side-menu a {
@@ -207,22 +208,29 @@ li:last-child {
   border-bottom: none;
 }
 
-/* ===== OPTIMISATION DES LISTES DÉROULANTES (SCROLL) ===== */
-/* On applique une hauteur max aux listes pour éviter que les sections ne s'allongent trop */
+/* ===== SCROLLING & LIMITATION DES SECTIONS ===== */
+/* Application du scroll sur la liste des flashcards et autres listes longues */
 #flashcardsList, #priorityList, #tagList {
-  max-height: 300px; /* Hauteur max avant de faire défiler */
-  overflow-y: auto;  /* Active le scroll vertical */
-  padding-right: 5px;
+  max-height: 400px;    /* Limite la hauteur à 400px */
+  overflow-y: auto;     /* Active le scroll vertical si ça dépasse */
+  padding-right: 8px;
   margin-top: 10px;
   border: 1px solid rgba(0,0,0,0.05);
   border-radius: 8px;
+  background: rgba(255, 255, 255, 0.5); /* Léger fond pour distinguer la zone */
 }
 
-/* Style de la barre de défilement (Scrollbar) pour Chrome/Safari */
+/* Style moderne de la barre de défilement (Scrollbar) */
 #flashcardsList::-webkit-scrollbar, 
 #priorityList::-webkit-scrollbar, 
 #tagList::-webkit-scrollbar {
   width: 6px;
+}
+
+#flashcardsList::-webkit-scrollbar-track,
+#priorityList::-webkit-scrollbar-track,
+#tagList::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 #flashcardsList::-webkit-scrollbar-thumb,
@@ -356,4 +364,5 @@ body.dark #flashcardsList,
 body.dark #priorityList, 
 body.dark #tagList {
   border-color: #333;
+  background: rgba(255, 255, 255, 0.05);
 }
