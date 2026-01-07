@@ -33,7 +33,7 @@
 
     <input type="text" id="russe" placeholder="Mot en russe">
     <input type="text" id="francais" placeholder="Traduction française">
-
+    <input type="text" id="tags" placeholder="Tags (séparés par virgule)">
     <button id="addFlashcard">Ajouter</button>
   </section>
 
@@ -46,6 +46,13 @@
       <button data-pack="new">🆕 Nouveaux</button>
       <button data-pack="review">🔁 À revoir</button>
       <button data-pack="known">⭐ Maîtrisés</button>
+    </div>
+
+    <div>
+      <label for="tagFilter">Filtrer par tag :</label>
+      <select id="tagFilter">
+        <option value="">Tous</option>
+      </select>
     </div>
 
     <div id="reviewCard">
@@ -61,7 +68,7 @@
     </div>
   </section>
 
-  <!-- Liste -->
+  <!-- Liste des flashcards -->
   <section class="card">
     <h2>📋 Mes flashcards</h2>
     <ul id="flashcardsList"></ul>
