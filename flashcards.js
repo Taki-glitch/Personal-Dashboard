@@ -15,13 +15,39 @@ function todayISO() {
 }
 
 /* =====================================
-   STOCKAGE LOCAL
+   STOCKAGE LOCAL + LISTE GITHUB
 ===================================== */
-function loadFlashcards() {
-  const data = localStorage.getItem("flashcards");
-  flashcards = data ? JSON.parse(data) : [];
+async function loadFlashcards() {
+  // 1️⃣ Charger les flashcards locales
+  const localData = localStorage.getItem("flashcards");
+  flashcards = localData ? JSON.parse(localData) : [];
+
+  // 2️⃣ Charger la liste de base depuis GitHub
+  try {
+    const response = await fetch("https://raw.githubusercontent.com/Taki-glitch/Personal-Dashboard/main/list.json");
+    if (!response.ok) throw new Error("Impossible de charger la liste de base");
+    const baseFlashcards = await response.json();
+
+    // 3️⃣ Fusionner avec les flashcards locales en évitant les doublons
+    const existingSet = new Set(flashcards.map(c => c.russe + "|" + c.francais));
+    baseFlashcards.forEach(c => {
+      const key = c.russe + "|" + c.francais;
+      if (!existingSet.has(key)) {
+        // Générer un ID unique pour chaque carte importée
+        c.id = Date.now() + Math.floor(Math.random() * 100000);
+        flashcards.push(c);
+      }
+    });
+
+    saveFlashcards(); // Sauvegarde après fusion
+  } catch (err) {
+    console.error("Erreur lors du chargement des flashcards de base :", err);
+  }
 }
 
+/* =====================================
+   SAUVEGARDE LOCALSTORAGE
+===================================== */
 function saveFlashcards() {
   localStorage.setItem("flashcards", JSON.stringify(flashcards));
 }
@@ -57,20 +83,17 @@ function getCardsToReview(cards) {
 function applyGrade(card, grade) {
   const d = new Date();
   if (grade === 0) {
-    // Faux
     card.erreurs++;
     card.repetitions = 0;
     card.interval = 1;
     card.ease = Math.max(1.3, card.ease - 0.2);
     d.setDate(d.getDate() + 1);
   } else if (grade === 1) {
-    // Difficile
     card.repetitions++;
     card.interval = Math.max(1, Math.round(card.interval * 1.5));
     card.ease = Math.max(1.3, card.ease - 0.05);
     d.setDate(d.getDate() + card.interval);
   } else if (grade === 2) {
-    // Correct
     card.repetitions++;
     card.interval = Math.round(card.interval * card.ease);
     card.ease += 0.1;
@@ -425,8 +448,9 @@ document.getElementById("clearFlashcards").addEventListener("click", () => {
 /* =====================================
    INITIALISATION
 ===================================== */
-loadFlashcards();
-displayFlashcards();
-updateStats();
-updateChart();
-updateTagFilter();
+loadFlashcards().then(() => {
+  displayFlashcards();
+  updateStats();
+  updateChart();
+  updateTagFilter();
+});
