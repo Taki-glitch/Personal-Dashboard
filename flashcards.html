@@ -5,6 +5,12 @@
   <title>Flashcards – Russe</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="style.css">
+  <style>
+    /* Petit style pour boutons actifs et layout */
+    .review-filters button.active { background-color: #3498db; color: #fff; }
+    .card { border: 1px solid #ccc; padding: 15px; margin-bottom: 15px; border-radius: 8px; }
+    button { cursor: pointer; }
+  </style>
 </head>
 <body>
 
@@ -36,12 +42,21 @@
     <button id="addFlashcard">Ajouter</button>
   </section>
 
+  <!-- Import / Export / Clear -->
+  <section class="card">
+    <h2>💾 Import / Export / Supprimer</h2>
+    <button id="exportFlashcards">Exporter JSON</button>
+    <button id="btnImportFlashcards">Importer JSON</button>
+    <input type="file" id="importFlashcards" accept=".json" style="display:none;">
+    <button id="clearFlashcards">Supprimer toutes les flashcards</button>
+  </section>
+
   <!-- Révision -->
   <section class="card">
     <h2>🎴 Révision</h2>
 
     <div class="review-filters">
-      <button class="active" data-pack="intelligent">🎯 Intelligent</button>
+      <button data-pack="intelligent">🎯 Intelligent</button>
       <button data-pack="new">🆕 Nouveaux</button>
       <button data-pack="review">🔁 À revoir</button>
       <button data-pack="known">⭐ Maîtrisés</button>
@@ -55,7 +70,7 @@
     </div>
 
     <div id="reviewCard">
-      <p id="reviewRusse">Choisis un paquet pour commencer</p>
+      <p id="reviewRusse">Choisis un paquet</p>
       <p id="reviewFrancais" style="display:none;"></p>
     </div>
 
@@ -63,8 +78,8 @@
 
     <div id="reviewActions" style="display:none;">
       <button id="know">✅ Je savais</button>
-      <button id="hard">⚡ Difficile</button>
       <button id="dontKnow">❌ Je ne savais pas</button>
+      <button id="hard">⚠️ Difficile</button>
     </div>
   </section>
 
@@ -73,9 +88,9 @@
     <h2>📋 Mes flashcards</h2>
     <ul id="flashcardsList"></ul>
   </section>
-
+  
   <!-- Performance & Suggestions -->
-  <section id="performanceDashboard" class="card">
+  <section class="card" id="performanceDashboard">
     <h2>📊 Performance & Suggestions</h2>
     <div id="dashboardStats">
       <p id="todayRevised">Cartes révisées aujourd'hui : 0</p>
