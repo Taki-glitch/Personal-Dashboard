@@ -5,6 +5,7 @@ let flashcards = [];
 let reviewPack = [];
 let currentIndex = 0;
 let currentCard = null;
+let dailyGoal = 10; // objectif journalier par défaut
 
 /* =====================================
    Stockage local
@@ -57,27 +58,31 @@ function displayFlashcards() {
 
   flashcards.forEach(card => {
     const li = document.createElement("li");
-    li.textContent = `${card.russe} → ${card.francais}`;
+    li.textContent = `${card.russe} → ${card.francais} [${card.tags.join(', ')}]`;
     list.appendChild(li);
   });
 }
 
 /* =====================================
-   Ajout d'une flashcard
+   Ajout d'une flashcard avec tags
 ===================================== */
 document.getElementById("addFlashcard").addEventListener("click", () => {
   const russe = document.getElementById("russe").value.trim();
   const francais = document.getElementById("francais").value.trim();
+  const tagsInput = document.getElementById("tags").value.trim();
+  const tags = tagsInput ? tagsInput.split(',').map(t => t.trim().toLowerCase()) : [];
+
   if (!russe || !francais) return;
 
   flashcards.push({
     id: Date.now(),
     russe,
     francais,
+    tags,
     repetitions: 0,
     erreurs: 0,
     niveau: 0,
-    interval: 1,           // intervalle en jours pour SRS
+    interval: 1,
     dernierPassage: null
   });
 
@@ -85,10 +90,31 @@ document.getElementById("addFlashcard").addEventListener("click", () => {
   displayFlashcards();
   updateStats();
   updateChart();
+  updateTagFilter();
 
   document.getElementById("russe").value = "";
   document.getElementById("francais").value = "";
+  document.getElementById("tags").value = "";
 });
+
+/* =====================================
+   Mise à jour des options de tag
+===================================== */
+function updateTagFilter() {
+  const select = document.getElementById("tagFilter");
+  const tagsSet = new Set();
+  flashcards.forEach(c => c.tags.forEach(t => tagsSet.add(t)));
+
+  const selected = select.value;
+  select.innerHTML = '<option value="">Tous</option>';
+  Array.from(tagsSet).sort().forEach(tag => {
+    const opt = document.createElement("option");
+    opt.value = tag;
+    opt.textContent = tag;
+    select.appendChild(opt);
+  });
+  select.value = selected;
+}
 
 /* =====================================
    Répétition espacée – SRS
@@ -104,7 +130,16 @@ function getDueCards(cards) {
 }
 
 /* =====================================
-   Paquets intelligents
+   Filtre tag pour révision
+===================================== */
+function filterByTag(cards) {
+  const selectedTag = document.getElementById("tagFilter").value;
+  if (!selectedTag) return cards;
+  return cards.filter(c => c.tags.includes(selectedTag));
+}
+
+/* =====================================
+   Paquets intelligents avec filtre tag
 ===================================== */
 function generatePack(type) {
   let pack;
@@ -122,9 +157,13 @@ function generatePack(type) {
       pack = flashcards.filter(c => c.niveau < 2 || c.erreurs > 1);
       break;
   }
-  return getDueCards(pack);
+  pack = getDueCards(pack);
+  return filterByTag(pack);
 }
 
+/* =====================================
+   Start et affichage des cartes
+===================================== */
 function startPack(type) {
   reviewPack = generatePack(type);
   currentIndex = 0;
@@ -208,7 +247,20 @@ function updateChart() {
 }
 
 /* =====================================
-   Boutons
+   Objectif quotidien
+===================================== */
+function checkDailyGoal() {
+  const log = JSON.parse(localStorage.getItem("revisionLog") || "{}");
+  const today = new Date().toISOString().split("T")[0];
+  const revisitedToday = log[today] ? log[today].revisited : 0;
+
+  if(revisitedToday >= dailyGoal) {
+    alert("🎉 Objectif du jour atteint !");
+  }
+}
+
+/* =====================================
+   Boutons de révision
 ===================================== */
 document.querySelectorAll(".review-filters button").forEach(btn => {
   btn.addEventListener("click", () => startPack(btn.dataset.pack));
@@ -231,6 +283,7 @@ document.getElementById("know").addEventListener("click", () => {
   updateStats();
   logRevision(currentCard, true);
   updateChart();
+  checkDailyGoal();
   nextCard();
 });
 
@@ -250,9 +303,17 @@ document.getElementById("dontKnow").addEventListener("click", () => {
 });
 
 /* =====================================
+   Filtre tag change
+===================================== */
+document.getElementById("tagFilter").addEventListener("change", () => {
+  if(reviewPack.length > 0) startPack(document.querySelector(".review-filters button.active")?.dataset.pack || "all");
+});
+
+/* =====================================
    Initialisation
 ===================================== */
 loadFlashcards();
 displayFlashcards();
 updateStats();
 updateChart();
+updateTagFilter();
