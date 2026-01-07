@@ -30,7 +30,6 @@
   <!-- Ajout de flashcard -->
   <section class="card">
     <h2>➕ Ajouter une flashcard</h2>
-
     <input type="text" id="russe" placeholder="Mot en russe">
     <input type="text" id="francais" placeholder="Traduction française">
     <input type="text" id="tags" placeholder="Tags (séparés par virgule)">
@@ -42,7 +41,7 @@
     <h2>🎴 Révision</h2>
 
     <div class="review-filters">
-      <button data-pack="all">🎯 Intelligent</button>
+      <button class="active" data-pack="intelligent">🎯 Intelligent</button>
       <button data-pack="new">🆕 Nouveaux</button>
       <button data-pack="review">🔁 À revoir</button>
       <button data-pack="known">⭐ Maîtrisés</button>
@@ -56,7 +55,7 @@
     </div>
 
     <div id="reviewCard">
-      <p id="reviewRusse">Choisis un paquet</p>
+      <p id="reviewRusse">Choisis un paquet pour commencer</p>
       <p id="reviewFrancais" style="display:none;"></p>
     </div>
 
@@ -64,6 +63,7 @@
 
     <div id="reviewActions" style="display:none;">
       <button id="know">✅ Je savais</button>
+      <button id="hard">⚡ Difficile</button>
       <button id="dontKnow">❌ Je ne savais pas</button>
     </div>
   </section>
@@ -73,22 +73,23 @@
     <h2>📋 Mes flashcards</h2>
     <ul id="flashcardsList"></ul>
   </section>
-  
-  <section id="performanceDashboard">
-  		<h2>📊 Performance & Suggestions</h2>
-  		<div id="dashboardStats">
-    		<p id="todayRevised">Cartes révisées aujourd'hui : 0</p>
-    		<p id="todaySuccess">Réussites : 0 / Échecs : 0</p>
-  		</div>
-  		<div id="priorityCards">
-    		<h3>Cartes prioritaires demain :</h3>
-    		<ul id="priorityList"></ul>
-  		</div>
-  		<div id="tagProgress">
-    		<h3>Progrès par tag :</h3>
-  		  <ul id="tagList"></ul>
- 	 </div>
-	</section>
+
+  <!-- Performance & Suggestions -->
+  <section id="performanceDashboard" class="card">
+    <h2>📊 Performance & Suggestions</h2>
+    <div id="dashboardStats">
+      <p id="todayRevised">Cartes révisées aujourd'hui : 0</p>
+      <p id="todaySuccess">Réussites : 0 / Échecs : 0</p>
+    </div>
+    <div id="priorityCards">
+      <h3>Cartes prioritaires demain :</h3>
+      <ul id="priorityList"></ul>
+    </div>
+    <div id="tagProgress">
+      <h3>Progrès par tag :</h3>
+      <ul id="tagList"></ul>
+    </div>
+  </section>
 
   <!-- Graphique de progression -->
   <section class="card">
