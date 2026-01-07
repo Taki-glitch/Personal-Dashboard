@@ -342,6 +342,10 @@ button:active {
   transition: background 0.3s ease, transform 0.2s ease;
 }
 
+#reviewCard p {
+  margin: 5px 0; /* espace vertical entre le russe et le français */
+}
+
 #reviewCard:hover {
   transform: scale(1.02);
   background: #d0e6f9; /* Légère variation au hover */
