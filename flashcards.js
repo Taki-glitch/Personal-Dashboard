@@ -84,6 +84,7 @@ document.getElementById("addFlashcard").addEventListener("click", () => {
   saveFlashcards();
   displayFlashcards();
   updateStats();
+  updateChart();
 
   document.getElementById("russe").value = "";
   document.getElementById("francais").value = "";
@@ -92,11 +93,10 @@ document.getElementById("addFlashcard").addEventListener("click", () => {
 /* =====================================
    Répétition espacée – SRS
 ===================================== */
-// Retourne les cartes à revoir aujourd'hui
 function getDueCards(cards) {
   const today = new Date();
   return cards.filter(card => {
-    if (!card.dernierPassage) return true; // jamais révisée
+    if (!card.dernierPassage) return true; 
     const last = new Date(card.dernierPassage);
     const diffDays = (today - last) / (1000 * 60 * 60 * 24);
     return diffDays >= card.interval;
@@ -158,6 +158,56 @@ function nextCard() {
 }
 
 /* =====================================
+   Log de révision pour le graphique
+===================================== */
+function logRevision(card, succes) {
+  let log = JSON.parse(localStorage.getItem("revisionLog") || "{}");
+  const today = new Date().toISOString().split("T")[0];
+
+  if (!log[today]) log[today] = { revisited: 0, success: 0, fail: 0 };
+  log[today].revisited++;
+  if(succes) log[today].success++;
+  else log[today].fail++;
+
+  localStorage.setItem("revisionLog", JSON.stringify(log));
+}
+
+/* =====================================
+   Graphique de progression quotidienne
+===================================== */
+function updateChart() {
+  const log = JSON.parse(localStorage.getItem("revisionLog") || "{}");
+  const labels = Object.keys(log).sort();
+  const revisited = labels.map(d => log[d].revisited);
+  const success = labels.map(d => log[d].success);
+  const fail = labels.map(d => log[d].fail);
+
+  if(window.progressChart) window.progressChart.destroy();
+
+  const ctx = document.getElementById("progressChart").getContext("2d");
+  window.progressChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [
+        { label: 'Révisées', data: revisited, backgroundColor: '#3498db' },
+        { label: 'Réussites', data: success, backgroundColor: '#2ecc71' },
+        { label: 'Échecs', data: fail, backgroundColor: '#e74c3c' }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: 'top' }
+      },
+      scales: {
+        y: { beginAtZero: true, precision:0 }
+      }
+    }
+  });
+}
+
+/* =====================================
    Boutons
 ===================================== */
 document.querySelectorAll(".review-filters button").forEach(btn => {
@@ -173,12 +223,14 @@ document.getElementById("showAnswer").addEventListener("click", () => {
 document.getElementById("know").addEventListener("click", () => {
   currentCard.repetitions++;
   currentCard.niveau++;
-  currentCard.interval *= 2; // double l'intervalle
+  currentCard.interval *= 2;
   currentCard.dernierPassage = new Date().toISOString();
 
   saveFlashcards();
   displayFlashcards();
   updateStats();
+  logRevision(currentCard, true);
+  updateChart();
   nextCard();
 });
 
@@ -186,12 +238,14 @@ document.getElementById("dontKnow").addEventListener("click", () => {
   currentCard.repetitions++;
   currentCard.erreurs++;
   currentCard.niveau = Math.max(0, currentCard.niveau - 1);
-  currentCard.interval = 1; // revoir très vite
+  currentCard.interval = 1;
   currentCard.dernierPassage = new Date().toISOString();
 
   saveFlashcards();
   displayFlashcards();
   updateStats();
+  logRevision(currentCard, false);
+  updateChart();
   nextCard();
 });
 
@@ -201,3 +255,4 @@ document.getElementById("dontKnow").addEventListener("click", () => {
 loadFlashcards();
 displayFlashcards();
 updateStats();
+updateChart();
