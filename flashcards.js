@@ -8,7 +8,7 @@ let currentCard = null;
 let dailyGoal = 10;
 
 /* =====================================
-   UTILITAIRE DATE
+   UTILITAIRES DATE
 ===================================== */
 function todayISO() {
   return new Date().toISOString().split("T")[0];
@@ -27,7 +27,7 @@ function saveFlashcards() {
 }
 
 /* =====================================
-   CRÉATION FLASHCARD (SRS)
+   CRÉATION FLASHCARD
 ===================================== */
 function createFlashcard(russe, francais, tags = []) {
   return {
@@ -44,123 +44,34 @@ function createFlashcard(russe, francais, tags = []) {
 }
 
 /* =====================================
-   FILTRE PAR TAG
-===================================== */
-function updateTagFilter() {
-  const select = document.getElementById("tagFilter");
-  const tagsSet = new Set();
-  flashcards.forEach(c => c.tags.forEach(t => tagsSet.add(t)));
-
-  const selected = select.value;
-  select.innerHTML = '<option value="">Tous</option>';
-  [...tagsSet].sort().forEach(tag => {
-    const opt = document.createElement("option");
-    opt.value = tag;
-    opt.textContent = tag;
-    select.appendChild(opt);
-  });
-  select.value = selected;
-}
-
-function filterByTag(cards) {
-  const tag = document.getElementById("tagFilter").value;
-  return tag ? cards.filter(c => c.tags.includes(tag)) : cards;
-}
-
-/* =====================================
-   SRS – CARTES À RÉVISER
+   RÉVISION SRS – CARTES DUES
 ===================================== */
 function getCardsToReview(cards) {
   const today = todayISO();
-  return cards.filter(c => c.repetitions === 0 || c.nextReview <= today);
+  return cards.filter(c => c.nextReview <= today);
 }
 
 /* =====================================
-   GÉNÉRATION DE PAQUET
-===================================== */
-function generatePack(type = "intelligent") {
-  const today = todayISO();
-  let pack;
-
-  switch(type) {
-    case "intelligent":
-      pack = flashcards.filter(c => c.repetitions === 0 || c.nextReview <= today);
-      break;
-    case "new":
-      pack = flashcards.filter(c => c.repetitions === 0);
-      break;
-    case "review":
-      pack = flashcards.filter(c => c.repetitions > 0 && c.nextReview <= today && c.repetitions < 5);
-      break;
-    case "known":
-      pack = flashcards.filter(c => c.repetitions >= 5);
-      break;
-    default:
-      pack = flashcards.slice();
-  }
-
-  return filterByTag(pack);
-}
-
-/* =====================================
-   DÉBUT DE SESSION
-===================================== */
-function startPack(type = "intelligent") {
-  reviewPack = generatePack(type);
-  currentIndex = 0;
-
-  if (reviewPack.length === 0) {
-    document.getElementById("reviewRusse").textContent = "🎉 Aucune carte à réviser pour ce paquet";
-    document.getElementById("reviewFrancais").style.display = "none";
-    document.getElementById("reviewActions").style.display = "none";
-    return;
-  }
-
-  showCard();
-}
-
-/* =====================================
-   AFFICHAGE CARTE
-===================================== */
-function showCard() {
-  currentCard = reviewPack[currentIndex];
-  document.getElementById("reviewRusse").textContent = currentCard.russe;
-  document.getElementById("reviewFrancais").style.display = "none";
-  document.getElementById("reviewActions").style.display = "none";
-}
-
-function nextCard() {
-  currentIndex++;
-  if (currentIndex >= reviewPack.length) {
-    document.getElementById("reviewRusse").textContent = "🎉 Révision terminée !";
-    document.getElementById("reviewActions").style.display = "none";
-    return;
-  }
-  showCard();
-}
-
-/* =====================================
-   SRS – NOTATION 0 / 1 / 2
+   RÉVISION SRS – GRADE 0 / 1 / 2
 ===================================== */
 function applyGrade(card, grade) {
   const d = new Date();
 
   if (grade === 0) {
+    // Faux
     card.erreurs++;
     card.repetitions = 0;
     card.interval = 1;
     card.ease = Math.max(1.3, card.ease - 0.2);
     d.setDate(d.getDate() + 1);
-  }
-
-  if (grade === 1) {
+  } else if (grade === 1) {
+    // Difficile
     card.repetitions++;
     card.interval = Math.max(1, Math.round(card.interval * 1.5));
     card.ease = Math.max(1.3, card.ease - 0.05);
     d.setDate(d.getDate() + card.interval);
-  }
-
-  if (grade === 2) {
+  } else if (grade === 2) {
+    // Correct
     card.repetitions++;
     card.interval = Math.round(card.interval * card.ease);
     card.ease += 0.1;
@@ -171,23 +82,17 @@ function applyGrade(card, grade) {
 }
 
 /* =====================================
-   STATISTIQUES
+   STATISTIQUES GLOBALES
 ===================================== */
 function updateStats() {
   const total = flashcards.length;
   const today = todayISO();
-
   const nouveaux = flashcards.filter(c => c.repetitions === 0).length;
   const aRevoir = flashcards.filter(c => c.nextReview <= today).length;
   const maitrises = flashcards.filter(c => c.repetitions >= 5).length;
 
-  let reps = 0;
-  let errs = 0;
-  flashcards.forEach(c => {
-    reps += c.repetitions;
-    errs += c.erreurs;
-  });
-
+  let reps = 0, errs = 0;
+  flashcards.forEach(c => { reps += c.repetitions; errs += c.erreurs; });
   const success = reps === 0 ? 0 : Math.round(((reps - errs) / reps) * 100);
 
   document.getElementById("stat-total").textContent = total;
@@ -195,6 +100,8 @@ function updateStats() {
   document.getElementById("stat-review").textContent = aRevoir;
   document.getElementById("stat-known").textContent = maitrises;
   document.getElementById("stat-success").textContent = success + "%";
+
+  updatePerformanceDashboard();
 }
 
 /* =====================================
@@ -229,7 +136,6 @@ document.getElementById("addFlashcard").addEventListener("click", () => {
 
   flashcards.push(createFlashcard(russe, francais, tags));
   saveFlashcards();
-
   displayFlashcards();
   updateStats();
   updateChart();
@@ -241,45 +147,163 @@ document.getElementById("addFlashcard").addEventListener("click", () => {
 });
 
 /* =====================================
-   LOG DE RÉVISION & GRAPHIQUE
+   TAGS
 ===================================== */
-function logRevision(grade) {
-  let log = JSON.parse(localStorage.getItem("revisionLog") || "{}");
+function updateTagFilter() {
+  const select = document.getElementById("tagFilter");
+  const tagsSet = new Set();
+  flashcards.forEach(c => c.tags.forEach(t => tagsSet.add(t)));
+
+  const selected = select.value;
+  select.innerHTML = '<option value="">Tous</option>';
+  [...tagsSet].sort().forEach(tag => {
+    const opt = document.createElement("option");
+    opt.value = tag;
+    opt.textContent = tag;
+    select.appendChild(opt);
+  });
+  select.value = selected;
+}
+
+function filterByTag(cards) {
+  const tag = document.getElementById("tagFilter").value;
+  return tag ? cards.filter(c => c.tags.includes(tag)) : cards;
+}
+
+/* =====================================
+   GÉNÉRATION DE PAQUET DE RÉVISION
+===================================== */
+function generatePack(type = "intelligent") {
+  let pack = [];
   const today = todayISO();
 
+  switch(type) {
+    case "new": pack = flashcards.filter(c => c.repetitions === 0); break;
+    case "review": pack = flashcards.filter(c => c.nextReview <= today && c.repetitions > 0); break;
+    case "known": pack = flashcards.filter(c => c.repetitions >= 5); break;
+    default:
+      // Intelligent : toutes cartes dues
+      pack = getCardsToReview(flashcards);
+      break;
+  }
+  return filterByTag(pack);
+}
+
+/* =====================================
+   SESSION DE RÉVISION
+===================================== */
+function startPack(type) {
+  // Mettre à jour bouton actif
+  document.querySelectorAll(".review-filters button").forEach(btn => btn.classList.remove("active"));
+  document.querySelector(`.review-filters button[data-pack="${type}"]`)?.classList.add("active");
+
+  reviewPack = generatePack(type);
+  currentIndex = 0;
+
+  if (reviewPack.length === 0) {
+    document.getElementById("reviewRusse").textContent = "🎉 Aucune carte à réviser";
+    document.getElementById("reviewFrancais").style.display = "none";
+    document.getElementById("reviewActions").style.display = "none";
+    return;
+  }
+  showCard();
+}
+
+function showCard() {
+  currentCard = reviewPack[currentIndex];
+  document.getElementById("reviewRusse").textContent = currentCard.russe;
+  document.getElementById("reviewFrancais").style.display = "none";
+  document.getElementById("reviewActions").style.display = "none";
+}
+
+function nextCard() {
+  currentIndex++;
+  if (currentIndex >= reviewPack.length) {
+    document.getElementById("reviewRusse").textContent = "🎉 Révision terminée !";
+    document.getElementById("reviewActions").style.display = "none";
+    return;
+  }
+  showCard();
+}
+
+/* =====================================
+   LOG & CHART
+===================================== */
+function logRevision(grade) {
+  const log = JSON.parse(localStorage.getItem("revisionLog") || "{}");
+  const today = todayISO();
   if (!log[today]) log[today] = { revisited: 0, success: 0, fail: 0 };
   log[today].revisited++;
   grade === 2 ? log[today].success++ : log[today].fail++;
-
   localStorage.setItem("revisionLog", JSON.stringify(log));
+  updatePerformanceDashboard();
 }
 
 function updateChart() {
   const log = JSON.parse(localStorage.getItem("revisionLog") || "{}");
   const labels = Object.keys(log).sort();
-
   const revisited = labels.map(d => log[d].revisited);
   const success = labels.map(d => log[d].success);
   const fail = labels.map(d => log[d].fail);
 
   if (window.progressChart) window.progressChart.destroy();
-
   const ctx = document.getElementById("progressChart").getContext("2d");
   window.progressChart = new Chart(ctx, {
     type: "bar",
     data: {
       labels,
       datasets: [
-        { label: "Révisées", data: revisited },
-        { label: "Réussites", data: success },
-        { label: "Échecs", data: fail }
+        { label: "Révisées", data: revisited, backgroundColor: '#3498db' },
+        { label: "Réussites", data: success, backgroundColor: '#2ecc71' },
+        { label: "Échecs", data: fail, backgroundColor: '#e74c3c' }
       ]
     },
-    options: {
-      responsive: true,
-      scales: { y: { beginAtZero: true } }
-    }
+    options: { responsive: true, scales: { y: { beginAtZero: true } } }
   });
+}
+
+/* =====================================
+   DASHBOARD PERFORMANCE
+===================================== */
+function updatePerformanceDashboard() {
+  const log = JSON.parse(localStorage.getItem("revisionLog") || "{}");
+  const today = todayISO();
+  const revisitedToday = log[today]?.revisited || 0;
+  const successToday = log[today]?.success || 0;
+  const failToday = log[today]?.fail || 0;
+
+  document.getElementById("todayRevised").textContent = `Cartes révisées aujourd'hui : ${revisitedToday}`;
+  document.getElementById("todaySuccess").textContent = `Réussites : ${successToday} / Échecs : ${failToday}`;
+
+  // Cartes prioritaires demain
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowISO = tomorrow.toISOString().split("T")[0];
+  const priority = flashcards.filter(c => c.nextReview === tomorrowISO);
+  const list = document.getElementById("priorityList");
+  list.innerHTML = "";
+  priority.forEach(c => {
+    const li = document.createElement("li");
+    li.textContent = `${c.russe} → ${c.francais} [${c.tags.join(", ")}]`;
+    list.appendChild(li);
+  });
+
+  // Progrès par tag
+  const tagMap = {};
+  flashcards.forEach(c => {
+    c.tags.forEach(t => {
+      if (!tagMap[t]) tagMap[t] = { total:0, success:0 };
+      tagMap[t].total++;
+      if (c.repetitions > 0 && c.erreurs === 0) tagMap[t].success++;
+    });
+  });
+  const tagList = document.getElementById("tagList");
+  tagList.innerHTML = "";
+  for (const [tag, val] of Object.entries(tagMap)) {
+    const li = document.createElement("li");
+    li.textContent = `${tag} : ${val.success} / ${val.total} réussites`;
+    tagList.appendChild(li);
+  }
 }
 
 /* =====================================
@@ -293,6 +317,7 @@ document.getElementById("showAnswer").addEventListener("click", () => {
 });
 
 document.getElementById("dontKnow").addEventListener("click", () => {
+  if (!currentCard) return;
   applyGrade(currentCard, 0);
   saveFlashcards();
   logRevision(0);
@@ -302,6 +327,7 @@ document.getElementById("dontKnow").addEventListener("click", () => {
 });
 
 document.getElementById("hard").addEventListener("click", () => {
+  if (!currentCard) return;
   applyGrade(currentCard, 1);
   saveFlashcards();
   logRevision(1);
@@ -311,6 +337,7 @@ document.getElementById("hard").addEventListener("click", () => {
 });
 
 document.getElementById("know").addEventListener("click", () => {
+  if (!currentCard) return;
   applyGrade(currentCard, 2);
   saveFlashcards();
   logRevision(2);
@@ -319,23 +346,13 @@ document.getElementById("know").addEventListener("click", () => {
   nextCard();
 });
 
-/* =====================================
-   BOUTONS PAQUETS DE RÉVISION
-===================================== */
 document.querySelectorAll(".review-filters button").forEach(btn => {
-  btn.addEventListener("click", () => {
-    document.querySelectorAll(".review-filters button").forEach(b => b.classList.remove("active"));
-    btn.classList.add("active");
-    startPack(btn.dataset.pack);
-  });
+  btn.addEventListener("click", () => startPack(btn.dataset.pack));
 });
 
-/* =====================================
-   FILTRE TAG
-===================================== */
 document.getElementById("tagFilter").addEventListener("change", () => {
   const activeBtn = document.querySelector(".review-filters button.active");
-  startPack(activeBtn ? activeBtn.dataset.pack : "intelligent");
+  startPack(activeBtn?.dataset.pack || "intelligent");
 });
 
 /* =====================================
