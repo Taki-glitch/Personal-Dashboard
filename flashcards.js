@@ -29,15 +29,22 @@ async function loadFlashcards() {
     const baseFlashcards = await response.json();
 
     // 3️⃣ Fusionner avec les flashcards locales en évitant les doublons
-    const existingSet = new Set(flashcards.map(c => c.russe + "|" + c.francais));
-    baseFlashcards.forEach(c => {
-      const key = c.russe + "|" + c.francais;
-      if (!existingSet.has(key)) {
-        // Générer un ID unique pour chaque carte importée
-        c.id = Date.now() + Math.floor(Math.random() * 100000);
-        flashcards.push(c);
-      }
-    });
+   const existingSet = new Set(flashcards.map(c => c.russe + "|" + c.francais));
+
+   baseFlashcards.forEach(c => {
+       const key = c.russe + "|" + c.francais;
+       if (!existingSet.has(key)) {
+           // On crée une vraie flashcard à partir des données simples du JSON
+           // On gère le fait que 'tag' dans le JSON devienne un tableau 'tags'
+           const tags = c.tag ? [c.tag] : (c.tags || []);
+        
+           const newCard = createFlashcard(c.russe, c.francais, tags);
+           // On s'assure que l'ID est unique
+           newCard.id = Date.now() + Math.floor(Math.random() * 1000000);
+        
+           flashcards.push(newCard);
+       }
+   });
 
     saveFlashcards(); // Sauvegarde après fusion
   } catch (err) {
