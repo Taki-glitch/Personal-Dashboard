@@ -8,6 +8,81 @@ body {
   color: #333;
 }
 
+/* ==== BOUTON MENU ==== */
+#menu-btn {
+  position: fixed;
+  top: 15px;
+  left: 15px;
+  font-size: 26px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  z-index: 1001;
+}
+
+/* Menu latéral */
+#side-menu {
+  position: fixed;
+  top: 0;
+  left: -260px;
+  width: 250px;
+  height: 100%;
+  background: #1e1e1e;
+  color: white;
+  padding: 20px;
+  transition: left 0.3s ease;
+  z-index: 1002;
+}
+
+#side-menu.open {
+  left: 0;
+}
+
+/* Bouton fermer */
+#close-menu {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 22px;
+  cursor: pointer;
+  margin-bottom: 20px;
+}
+
+/* Liens */
+#side-menu ul {
+  list-style: none;
+  padding: 0;
+}
+
+#side-menu li {
+  margin: 15px 0;
+}
+
+#side-menu a {
+  color: white;
+  text-decoration: none;
+  font-size: 16px;
+}
+
+/* Overlay */
+#overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.4);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+  z-index: 1000;
+}
+
+#overlay.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
 /* ===== HEADER & MÉTÉO ===== */
 header {
   background: #007ACC;
