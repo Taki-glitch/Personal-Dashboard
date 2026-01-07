@@ -1,27 +1,21 @@
 /* =====================================
    VARIABLES GLOBALES
 ===================================== */
-let flashcards = [];      // Toutes les flashcards
-let reviewPack = [];      // Paquet de révision courant
-let currentIndex = 0;     // Index de la carte actuelle
-let currentCard = null;   // Carte en cours
-let dailyGoal = 10;       // Objectif journalier
+let flashcards = [];
+let reviewPack = [];
+let currentIndex = 0;
+let currentCard = null;
+let dailyGoal = 10;
 
 /* =====================================
-   UTILITAIRES DATE
+   DATE UTIL
 ===================================== */
 function todayISO() {
   return new Date().toISOString().split("T")[0];
 }
 
-function daysFromNow(n) {
-  const d = new Date();
-  d.setDate(d.getDate() + n);
-  return d.toISOString().split("T")[0];
-}
-
 /* =====================================
-   STOCKAGE LOCAL
+   STOCKAGE
 ===================================== */
 function loadFlashcards() {
   const data = localStorage.getItem("flashcards");
@@ -33,7 +27,7 @@ function saveFlashcards() {
 }
 
 /* =====================================
-   CRÉATION D'UNE FLASHCARD
+   CRÉATION FLASHCARD (SRS)
 ===================================== */
 function createFlashcard(russe, francais, tags = []) {
   return {
@@ -43,9 +37,9 @@ function createFlashcard(russe, francais, tags = []) {
     tags,
     repetitions: 0,
     erreurs: 0,
-    interval: 1,    // Intervalle en jours pour SRS
-    ease: 2.5,      // Facteur d'espacement
-    nextReview: todayISO()
+    interval: 1,
+    ease: 2.5,
+    nextReview: todayISO() // toujours visible dès création
   };
 }
 
@@ -54,42 +48,41 @@ function createFlashcard(russe, francais, tags = []) {
 ===================================== */
 function getCardsToReview(cards) {
   const today = todayISO();
-  return cards.filter(c => c.nextReview <= today);
+  return cards.filter(c => {
+    // Forcer toutes les nouvelles cartes (repetitions === 0) à être visibles
+    return c.repetitions === 0 || c.nextReview <= today;
+  });
 }
 
 /* =====================================
-   SRS – NOTATION 0 / 1 / 2
-   0 = Je ne connais pas
-   1 = Difficile
-   2 = Je connais
+   NOTATION 0 / 1 / 2
 ===================================== */
 function applyGrade(card, grade) {
   const d = new Date();
 
-  if (grade === 0) { // Erreur
+  if (grade === 0) {
     card.erreurs++;
     card.repetitions = 0;
     card.interval = 1;
     card.ease = Math.max(1.3, card.ease - 0.2);
     d.setDate(d.getDate() + 1);
-    card.nextReview = d.toISOString().split("T")[0];
   }
 
-  if (grade === 1) { // Difficile
+  if (grade === 1) {
     card.repetitions++;
     card.interval = Math.max(1, Math.round(card.interval * 1.5));
     card.ease = Math.max(1.3, card.ease - 0.05);
     d.setDate(d.getDate() + card.interval);
-    card.nextReview = d.toISOString().split("T")[0];
   }
 
-  if (grade === 2) { // Connu
+  if (grade === 2) {
     card.repetitions++;
     card.interval = Math.round(card.interval * card.ease);
     card.ease += 0.1;
     d.setDate(d.getDate() + card.interval);
-    card.nextReview = d.toISOString().split("T")[0];
   }
+
+  card.nextReview = d.toISOString().split("T")[0];
 }
 
 /* =====================================
@@ -103,8 +96,12 @@ function updateStats() {
   const aRevoir = flashcards.filter(c => c.nextReview <= today).length;
   const maitrises = flashcards.filter(c => c.repetitions >= 5).length;
 
-  let reps = 0, errs = 0;
-  flashcards.forEach(c => { reps += c.repetitions; errs += c.erreurs; });
+  let reps = 0;
+  let errs = 0;
+  flashcards.forEach(c => {
+    reps += c.repetitions;
+    errs += c.erreurs;
+  });
 
   const success = reps === 0 ? 0 : Math.round(((reps - errs) / reps) * 100);
 
@@ -152,32 +149,29 @@ document.getElementById("addFlashcard").addEventListener("click", () => {
   updateStats();
   updateChart();
   updateTagFilter();
-  updateDashboard();
 
+  // reset formulaire
   document.getElementById("russe").value = "";
   document.getElementById("francais").value = "";
   document.getElementById("tags").value = "";
 });
 
 /* =====================================
-   FILTRAGE PAR TAG
+   TAGS
 ===================================== */
 function updateTagFilter() {
   const select = document.getElementById("tagFilter");
   const tagsSet = new Set();
-
   flashcards.forEach(c => c.tags.forEach(t => tagsSet.add(t)));
 
   const selected = select.value;
   select.innerHTML = '<option value="">Tous</option>';
-
   [...tagsSet].sort().forEach(tag => {
     const opt = document.createElement("option");
     opt.value = tag;
     opt.textContent = tag;
     select.appendChild(opt);
   });
-
   select.value = selected;
 }
 
@@ -194,20 +188,21 @@ function generatePack() {
 }
 
 /* =====================================
-   SESSION DE RÉVISION
+   SESSION
 ===================================== */
 function startPack() {
   reviewPack = generatePack();
   currentIndex = 0;
 
   if (reviewPack.length === 0) {
-    document.getElementById("reviewRusse").textContent = "🎉 Aucune carte à réviser aujourd’hui";
+    document.getElementById("reviewRusse").textContent =
+      "🎉 Aucune carte à réviser aujourd’hui";
     document.getElementById("reviewFrancais").style.display = "none";
     document.getElementById("reviewActions").style.display = "none";
     return;
   }
 
-  showCard();
+  showCard(); // affiche la première carte automatiquement
 }
 
 function showCard() {
@@ -220,9 +215,9 @@ function showCard() {
 function nextCard() {
   currentIndex++;
   if (currentIndex >= reviewPack.length) {
-    document.getElementById("reviewRusse").textContent = "🎉 Révision terminée !";
+    document.getElementById("reviewRusse").textContent =
+      "🎉 Révision terminée !";
     document.getElementById("reviewActions").style.display = "none";
-    updateDashboard();
     return;
   }
   showCard();
@@ -258,9 +253,9 @@ function updateChart() {
     data: {
       labels,
       datasets: [
-        { label: "Révisées", data: revisited, backgroundColor: "#3498db" },
-        { label: "Réussites", data: success, backgroundColor: "#2ecc71" },
-        { label: "Échecs", data: fail, backgroundColor: "#e74c3c" }
+        { label: "Révisées", data: revisited },
+        { label: "Réussites", data: success },
+        { label: "Échecs", data: fail }
       ]
     },
     options: {
@@ -271,57 +266,10 @@ function updateChart() {
 }
 
 /* =====================================
-   DASHBOARD PERFORMANCE & SUGGESTIONS
-===================================== */
-function updateDashboard() {
-  const today = todayISO();
-  const log = JSON.parse(localStorage.getItem("revisionLog") || "{}");
-
-  // Statistiques d'aujourd'hui
-  const revisited = log[today] ? log[today].revisited : 0;
-  const success = log[today] ? log[today].success : 0;
-  const fail = log[today] ? log[today].fail : 0;
-
-  document.getElementById("todayRevised").textContent = `Cartes révisées aujourd'hui : ${revisited}`;
-  document.getElementById("todaySuccess").textContent = `Réussites : ${success} / Échecs : ${fail}`;
-
-  // Cartes prioritaires demain
-  const tomorrow = daysFromNow(1);
-  const priority = flashcards
-    .filter(c => c.nextReview <= tomorrow)
-    .sort((a,b) => (b.erreurs/(b.repetitions||1)) - (a.erreurs/(a.repetitions||1)))
-    .slice(0, 10);
-
-  const priorityList = document.getElementById("priorityList");
-  priorityList.innerHTML = "";
-  priority.forEach(c => {
-    const li = document.createElement("li");
-    li.textContent = `${c.russe} → ${c.francais} [${c.tags.join(', ')}]`;
-    priorityList.appendChild(li);
-  });
-
-  // Progrès par tag
-  const tagMap = {};
-  flashcards.forEach(c => c.tags.forEach(tag => {
-    if (!tagMap[tag]) tagMap[tag] = { total:0, done:0 };
-    tagMap[tag].total++;
-    if (c.repetitions > 0) tagMap[tag].done++;
-  }));
-
-  const tagList = document.getElementById("tagList");
-  tagList.innerHTML = "";
-  Object.keys(tagMap).sort().forEach(tag => {
-    const { total, done } = tagMap[tag];
-    const li = document.createElement("li");
-    li.textContent = `${tag}: ${done} / ${total}`;
-    tagList.appendChild(li);
-  });
-}
-
-/* =====================================
    BOUTONS RÉVISION
 ===================================== */
 document.getElementById("showAnswer").addEventListener("click", () => {
+  if (!currentCard) return;
   document.getElementById("reviewFrancais").textContent = currentCard.francais;
   document.getElementById("reviewFrancais").style.display = "block";
   document.getElementById("reviewActions").style.display = "block";
@@ -333,7 +281,6 @@ document.getElementById("dontKnow").addEventListener("click", () => {
   logRevision(0);
   updateStats();
   updateChart();
-  updateDashboard();
   nextCard();
 });
 
@@ -343,7 +290,6 @@ document.getElementById("hard").addEventListener("click", () => {
   logRevision(1);
   updateStats();
   updateChart();
-  updateDashboard();
   nextCard();
 });
 
@@ -353,7 +299,6 @@ document.getElementById("know").addEventListener("click", () => {
   logRevision(2);
   updateStats();
   updateChart();
-  updateDashboard();
   nextCard();
 });
 
@@ -367,4 +312,3 @@ displayFlashcards();
 updateStats();
 updateChart();
 updateTagFilter();
-updateDashboard();
