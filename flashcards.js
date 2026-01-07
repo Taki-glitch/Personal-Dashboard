@@ -1,9 +1,11 @@
 let flashcards = [];
+let reviewPack = [];
+let currentIndex = 0;
 let currentCard = null;
 
-/* ==========================
-   Chargement / Sauvegarde
-========================== */
+/* =========================
+   Stockage
+========================= */
 
 function loadFlashcards() {
   const data = localStorage.getItem("flashcards");
@@ -14,16 +16,16 @@ function saveFlashcards() {
   localStorage.setItem("flashcards", JSON.stringify(flashcards));
 }
 
-/* ==========================
+/* =========================
    Affichage liste
-========================== */
+========================= */
 
 function displayFlashcards() {
   const list = document.getElementById("flashcardsList");
   list.innerHTML = "";
 
   if (flashcards.length === 0) {
-    list.innerHTML = "<li>Aucune flashcard pour le moment</li>";
+    list.innerHTML = "<li>Aucune flashcard</li>";
     return;
   }
 
@@ -34,9 +36,9 @@ function displayFlashcards() {
   });
 }
 
-/* ==========================
-   Ajout de flashcard
-========================== */
+/* =========================
+   Ajout
+========================= */
 
 document.getElementById("addFlashcard").addEventListener("click", () => {
   const russe = document.getElementById("russe").value.trim();
@@ -44,7 +46,7 @@ document.getElementById("addFlashcard").addEventListener("click", () => {
 
   if (!russe || !francais) return;
 
-  const newCard = {
+  flashcards.push({
     id: Date.now(),
     russe,
     francais,
@@ -52,9 +54,8 @@ document.getElementById("addFlashcard").addEventListener("click", () => {
     erreurs: 0,
     niveau: 0,
     dernierPassage: null
-  };
+  });
 
-  flashcards.push(newCard);
   saveFlashcards();
   displayFlashcards();
 
@@ -62,55 +63,85 @@ document.getElementById("addFlashcard").addEventListener("click", () => {
   document.getElementById("francais").value = "";
 });
 
-/* ==========================
-   Révision
-========================== */
+/* =========================
+   Paquets intelligents
+========================= */
 
-function getRandomCard() {
-  if (flashcards.length === 0) return null;
-  return flashcards[Math.floor(Math.random() * flashcards.length)];
+function generatePack(type) {
+  switch (type) {
+    case "new":
+      return flashcards.filter(c => c.niveau === 0);
+    case "review":
+      return flashcards.filter(c => c.erreurs > 0 && c.niveau < 3);
+    case "known":
+      return flashcards.filter(c => c.niveau >= 3);
+    default:
+      return flashcards.filter(c => c.niveau < 2 || c.erreurs > 1);
+  }
 }
 
-function showNewCard() {
-  currentCard = getRandomCard();
-  if (!currentCard) return;
+function startPack(type) {
+  reviewPack = generatePack(type);
+  currentIndex = 0;
 
+  if (reviewPack.length === 0) {
+    document.getElementById("reviewRusse").textContent = "Aucune carte dans ce paquet";
+    document.getElementById("reviewFrancais").style.display = "none";
+    document.getElementById("reviewActions").style.display = "none";
+    return;
+  }
+
+  showCard();
+}
+
+function showCard() {
+  currentCard = reviewPack[currentIndex];
   document.getElementById("reviewRusse").textContent = currentCard.russe;
   document.getElementById("reviewFrancais").textContent = currentCard.francais;
   document.getElementById("reviewFrancais").style.display = "none";
   document.getElementById("reviewActions").style.display = "none";
 }
 
-/* Lancer la révision */
-document.getElementById("startReview").addEventListener("click", () => {
-  showNewCard();
+function nextCard() {
+  currentIndex++;
+
+  if (currentIndex >= reviewPack.length) {
+    document.getElementById("reviewRusse").textContent = "🎉 Révision terminée !";
+    document.getElementById("reviewFrancais").style.display = "none";
+    document.getElementById("reviewActions").style.display = "none";
+    return;
+  }
+
+  showCard();
+}
+
+/* =========================
+   Boutons UI
+========================= */
+
+document.querySelectorAll(".review-filters button").forEach(btn => {
+  btn.addEventListener("click", () => {
+    startPack(btn.dataset.pack);
+  });
 });
 
-/* Voir la traduction */
 document.getElementById("showAnswer").addEventListener("click", () => {
   if (!currentCard) return;
-
   document.getElementById("reviewFrancais").style.display = "block";
   document.getElementById("reviewActions").style.display = "block";
 });
 
-/* Je savais */
 document.getElementById("know").addEventListener("click", () => {
-  if (!currentCard) return;
-
   currentCard.repetitions++;
   currentCard.niveau++;
   currentCard.dernierPassage = new Date().toISOString();
 
   saveFlashcards();
   displayFlashcards();
-  showNewCard();
+  nextCard();
 });
 
-/* Je ne savais pas */
 document.getElementById("dontKnow").addEventListener("click", () => {
-  if (!currentCard) return;
-
   currentCard.repetitions++;
   currentCard.erreurs++;
   currentCard.niveau = Math.max(0, currentCard.niveau - 1);
@@ -118,12 +149,12 @@ document.getElementById("dontKnow").addEventListener("click", () => {
 
   saveFlashcards();
   displayFlashcards();
-  showNewCard();
+  nextCard();
 });
 
-/* ==========================
+/* =========================
    Initialisation
-========================== */
+========================= */
 
 loadFlashcards();
 displayFlashcards();
