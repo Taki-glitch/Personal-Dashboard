@@ -7,8 +7,25 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
+  
 <button id="toggle-theme" aria-label="Changer le thème">🌙</button>
+
+<!-- Bouton menu -->
+<button id="menu-btn" aria-label="Ouvrir le menu">☰</button>
+
+<!-- Menu latéral -->
+<nav id="side-menu">
+  <button id="close-menu" aria-label="Fermer le menu">✕</button>
+  <ul>
+    <li><a href="#weather">🌤 Météo</a></li>
+    <li><a href="#news">📰 Actualités</a></li>
+    <li><a href="#todo">✅ To-do</a></li>
+    <li><a href="#settings">⚙️ Paramètres</a></li>
+  </ul>
+</nav>
+
+<!-- Overlay (fond sombre) -->
+<div id="overlay"></div>
 
 <header>
   <h1>Bienvenue !</h1>
