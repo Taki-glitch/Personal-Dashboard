@@ -176,6 +176,27 @@ li {
   display: flex; align-items: center; gap: 5px;
 }
 
+/* ==== FLASHCARDS ==== */
+.card {
+  background: var(--card-bg, #f5f5f5);
+  padding: 15px;
+  margin: 15px 0;
+  border-radius: 8px;
+}
+
+input {
+  display: block;
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 8px;
+}
+
+button {
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+
 /* ===== MODE SOMBRE ===== */
 #toggle-theme {
   position: fixed; top: 15px; right: 15px; width: 40px; height: 40px;
