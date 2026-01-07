@@ -458,6 +458,10 @@ document.getElementById("clearFlashcards").addEventListener("click", () => {
 loadFlashcards().then(() => {
   displayFlashcards();
   updateStats();
-  updateChart();
   updateTagFilter();
+  
+  // On laisse 100ms au navigateur pour préparer le canvas
+  setTimeout(() => {
+    updateChart();
+  }, 100);
 });
