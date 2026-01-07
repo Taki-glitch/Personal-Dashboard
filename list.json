@@ -1,5 +1,4 @@
-[
-  {"russe":"быть","francais":"être","tag":"verbe"},
+[{"russe":"быть","francais":"être","tag":"verbe"},
   {"russe":"иметь","francais":"avoir","tag":"verbe"},
   {"russe":"делать","francais":"faire","tag":"verbe"},
   {"russe":"говорить","francais":"parler","tag":"verbe"},
@@ -19,7 +18,6 @@
   {"russe":"писать","francais":"écrire","tag":"verbe"},
   {"russe":"читать","francais":"lire","tag":"verbe"},
   {"russe":"думать","francais":"penser","tag":"verbe"},
-
   {"russe":"человек","francais":"personne","tag":"nom"},
   {"russe":"дом","francais":"maison","tag":"nom"},
   {"russe":"слово","francais":"mot","tag":"nom"},
@@ -40,7 +38,6 @@
   {"russe":"мир","francais":"monde","tag":"nom"},
   {"russe":"путь","francais":"chemin","tag":"nom"},
   {"russe":"ночь","francais":"nuit","tag":"nom"},
-
   {"russe":"новый","francais":"nouveau","tag":"adjectif"},
   {"russe":"хороший","francais":"bon","tag":"adjectif"},
   {"russe":"большой","francais":"grand","tag":"adjectif"},
@@ -60,5 +57,4 @@
   {"russe":"тихий","francais":"silencieux","tag":"adjectif"},
   {"russe":"громкий","francais":"fort (son)","tag":"adjectif"},
   {"russe":"смелый","francais":"courageux","tag":"adjectif"},
-  {"russe":"красный","francais":"rouge","tag":"adjectif"}
-]
+  {"russe":"красный","francais":"rouge","tag":"adjectif"}]
