@@ -14,7 +14,7 @@ function todayISO() {
   return new Date().toISOString().split("T")[0];
 }
 
-/* =====================================
+/* =====================================raw.githubusercontent.com/Taki-glitch/Personal-Dashboard/main/list.json
    STOCKAGE LOCAL + LISTE GITHUB
 ===================================== */
 async function loadFlashcards() {
@@ -24,7 +24,7 @@ async function loadFlashcards() {
 
   // 2️⃣ Charger la liste de base depuis GitHub
   try {
-    const response = await fetch("https://raw.githubusercontent.com/Taki-glitch/Personal-Dashboard/main/list.json");
+    const response = await fetch("https://taki-glitch.github.io/Personal-Dashboard/list.json");
     if (!response.ok) throw new Error("Impossible de charger la liste de base");
     const baseFlashcards = await response.json();
 
