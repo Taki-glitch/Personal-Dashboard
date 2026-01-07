@@ -1,11 +1,11 @@
 /* =====================================
    VARIABLES GLOBALES
 ===================================== */
-let flashcards = [];
-let reviewPack = [];
-let currentIndex = 0;
-let currentCard = null;
-let dailyGoal = 10;
+let flashcards = [];       // Toutes les flashcards
+let reviewPack = [];       // Paquet de révision actuel
+let currentIndex = 0;      // Index de la carte affichée
+let currentCard = null;    // Carte actuellement affichée
+let dailyGoal = 10;        // Objectif journalier de révisions
 
 /* =====================================
    UTILITAIRES DATE
@@ -37,8 +37,8 @@ function createFlashcard(russe, francais, tags = []) {
     tags,
     repetitions: 0,
     erreurs: 0,
-    interval: 1,
-    ease: 2.5,
+    interval: 1,  // intervalle pour SRS
+    ease: 2.5,    // facteur d'aisance pour SRS
     nextReview: todayISO()
   };
 }
@@ -57,21 +57,18 @@ function getCardsToReview(cards) {
 function applyGrade(card, grade) {
   const d = new Date();
 
-  if (grade === 0) {
-    // Faux
+  if (grade === 0) { // Faux
     card.erreurs++;
     card.repetitions = 0;
     card.interval = 1;
     card.ease = Math.max(1.3, card.ease - 0.2);
     d.setDate(d.getDate() + 1);
-  } else if (grade === 1) {
-    // Difficile
+  } else if (grade === 1) { // Difficile
     card.repetitions++;
     card.interval = Math.max(1, Math.round(card.interval * 1.5));
     card.ease = Math.max(1.3, card.ease - 0.05);
     d.setDate(d.getDate() + card.interval);
-  } else if (grade === 2) {
-    // Correct
+  } else if (grade === 2) { // Correct
     card.repetitions++;
     card.interval = Math.round(card.interval * card.ease);
     card.ease += 0.1;
@@ -101,7 +98,7 @@ function updateStats() {
   document.getElementById("stat-known").textContent = maitrises;
   document.getElementById("stat-success").textContent = success + "%";
 
-  updatePerformanceDashboard();
+  updatePerformanceDashboard(); // Met à jour le dashboard
 }
 
 /* =====================================
@@ -141,6 +138,7 @@ document.getElementById("addFlashcard").addEventListener("click", () => {
   updateChart();
   updateTagFilter();
 
+  // Reset des champs
   document.getElementById("russe").value = "";
   document.getElementById("francais").value = "";
   document.getElementById("tags").value = "";
@@ -181,10 +179,7 @@ function generatePack(type = "intelligent") {
     case "new": pack = flashcards.filter(c => c.repetitions === 0); break;
     case "review": pack = flashcards.filter(c => c.nextReview <= today && c.repetitions > 0); break;
     case "known": pack = flashcards.filter(c => c.repetitions >= 5); break;
-    default:
-      // Intelligent : toutes cartes dues
-      pack = getCardsToReview(flashcards);
-      break;
+    default: pack = getCardsToReview(flashcards); break; // intelligent
   }
   return filterByTag(pack);
 }
@@ -193,7 +188,6 @@ function generatePack(type = "intelligent") {
    SESSION DE RÉVISION
 ===================================== */
 function startPack(type) {
-  // Mettre à jour bouton actif
   document.querySelectorAll(".review-filters button").forEach(btn => btn.classList.remove("active"));
   document.querySelector(`.review-filters button[data-pack="${type}"]`)?.classList.add("active");
 
@@ -236,9 +230,13 @@ function logRevision(grade) {
   log[today].revisited++;
   grade === 2 ? log[today].success++ : log[today].fail++;
   localStorage.setItem("revisionLog", JSON.stringify(log));
-  updatePerformanceDashboard();
+
+  updatePerformanceDashboard(); // MAJ dashboard
 }
 
+/* =====================================
+   CHART PROGRESSION QUOTIDIENNE
+===================================== */
 function updateChart() {
   const log = JSON.parse(localStorage.getItem("revisionLog") || "{}");
   const labels = Object.keys(log).sort();
@@ -263,7 +261,7 @@ function updateChart() {
 }
 
 /* =====================================
-   DASHBOARD PERFORMANCE
+   DASHBOARD PERFORMANCE & SUGGESTIONS
 ===================================== */
 function updatePerformanceDashboard() {
   const log = JSON.parse(localStorage.getItem("revisionLog") || "{}");
@@ -322,6 +320,7 @@ document.getElementById("dontKnow").addEventListener("click", () => {
   saveFlashcards();
   logRevision(0);
   updateStats();
+  updatePerformanceDashboard();
   updateChart();
   nextCard();
 });
@@ -332,6 +331,7 @@ document.getElementById("hard").addEventListener("click", () => {
   saveFlashcards();
   logRevision(1);
   updateStats();
+  updatePerformanceDashboard();
   updateChart();
   nextCard();
 });
@@ -342,10 +342,14 @@ document.getElementById("know").addEventListener("click", () => {
   saveFlashcards();
   logRevision(2);
   updateStats();
+  updatePerformanceDashboard();
   updateChart();
   nextCard();
 });
 
+/* =====================================
+   FILTRE & BOUTONS PAQUETS
+===================================== */
 document.querySelectorAll(".review-filters button").forEach(btn => {
   btn.addEventListener("click", () => startPack(btn.dataset.pack));
 });
@@ -363,3 +367,4 @@ displayFlashcards();
 updateStats();
 updateChart();
 updateTagFilter();
+updatePerformanceDashboard(); // <-- dashboard initialisé
