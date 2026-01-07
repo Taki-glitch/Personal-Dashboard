@@ -1,11 +1,29 @@
 /* ===== BASE ===== */
-* { box-sizing: border-box; transition: background 0.3s ease, color 0.3s ease; }
+* {
+  box-sizing: border-box;
+  transition: background 0.3s ease, color 0.3s ease;
+}
 
 body {
   margin: 0;
   font-family: 'Segoe UI', sans-serif;
   background: #f0f0f0;
   color: #333;
+}
+
+/* ===== BOUTON THEME ===== */
+#toggle-theme {
+  position: fixed;
+  top: 15px;
+  right: 15px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: white;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+  z-index: 1000;
 }
 
 /* ==== BOUTON MENU ==== */
@@ -38,7 +56,6 @@ body {
   left: 0;
 }
 
-/* Bouton fermer */
 #close-menu {
   background: none;
   border: none;
@@ -48,7 +65,7 @@ body {
   margin-bottom: 20px;
 }
 
-/* Liens */
+/* Liens menu */
 #side-menu ul {
   list-style: none;
   padding: 0;
@@ -83,7 +100,7 @@ body {
   pointer-events: auto;
 }
 
-/* ===== HEADER & MÉTÉO ===== */
+/* ===== HEADER ===== */
 header {
   background: #007ACC;
   color: white;
@@ -91,6 +108,15 @@ header {
   text-align: center;
 }
 
+header a {
+  color: white;
+  text-decoration: none;
+  font-size: 14px;
+  display: inline-block;
+  margin-top: 8px;
+}
+
+/* ===== MÉTÉO ===== */
 #weather-bar {
   display: flex;
   justify-content: center;
@@ -105,17 +131,19 @@ header {
   align-items: center;
 }
 
-.weather-title { font-weight: bold; margin-bottom: 8px; }
+.weather-title {
+  font-weight: bold;
+  margin-bottom: 8px;
+}
 
 .weather-hours {
   display: flex;
-  flex-direction: row;
   gap: 12px;
 }
 
 .weather-hour {
   min-width: 90px;
-  background: rgba(255, 255, 255, 0.25); /* Fond translucide */
+  background: rgba(255, 255, 255, 0.25);
   border-radius: 10px;
   padding: 10px;
   text-align: center;
@@ -125,9 +153,12 @@ header {
   align-items: center;
 }
 
-.weather-hour img { width: 48px; height: 48px; }
+.weather-hour img {
+  width: 48px;
+  height: 48px;
+}
 
-/* ===== LAYOUT ===== */
+/* ===== LAYOUT PRINCIPAL ===== */
 main {
   display: flex;
   flex-wrap: wrap;
@@ -153,59 +184,158 @@ section {
   margin-bottom: 15px;
 }
 
-input { padding: 10px; border: 1px solid #ddd; border-radius: 8px; }
-
-button {
-  padding: 10px; border: none; border-radius: 8px;
-  background: #007ACC; color: white; cursor: pointer; font-weight: bold;
-}
-
-/* ===== RSS & TODO ===== */
-ul { list-style: none; padding: 0; }
-li {
-  padding: 10px; border-bottom: 1px solid #eee;
-  display: flex; align-items: center; justify-content: space-between;
-}
-.rss-item a { text-decoration: none; color: inherit; display: block; width: 100%; }
-.rss-meta { font-size: 11px; color: #666; margin-top: 4px; }
-.read { opacity: 0.4; }
-
-#rss-sources-pills { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
-.pill {
-  background: #eee; padding: 4px 10px; border-radius: 15px; font-size: 11px;
-  display: flex; align-items: center; gap: 5px;
-}
-
-/* ==== FLASHCARDS ==== */
-.card {
-  background: var(--card-bg, #f5f5f5);
-  padding: 15px;
-  margin: 15px 0;
-  border-radius: 8px;
-}
-
 input {
   display: block;
   width: 100%;
   margin-bottom: 10px;
-  padding: 8px;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
 }
 
 button {
-  padding: 8px 12px;
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  background: #007ACC;
+  color: white;
   cursor: pointer;
+  font-weight: bold;
+  transition: background 0.2s ease;
 }
 
+button:hover {
+  background: #005A99;
+}
+
+/* ===== LISTES ===== */
+ul {
+  list-style: none;
+  padding: 0;
+}
+
+li {
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.rss-item a {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  width: 100%;
+}
+
+.rss-meta {
+  font-size: 11px;
+  color: #666;
+  margin-top: 4px;
+}
+
+.read {
+  opacity: 0.4;
+}
+
+/* ===== PILL TAGS ===== */
+#rss-sources-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 10px;
+}
+
+.pill {
+  background: #eee;
+  padding: 4px 10px;
+  border-radius: 15px;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* ===== FLASHCARDS ===== */
+.card {
+  background: var(--card-bg, #f5f5f5);
+  padding: 20px;
+  margin: 15px 0;
+  border-radius: 15px;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+}
+
+.card h2 {
+  margin-top: 0;
+  font-size: 18px;
+  margin-bottom: 15px;
+}
+
+.review-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.review-filters button {
+  font-size: 13px;
+  padding: 6px 12px;
+}
+
+#reviewCard {
+  background: #e8f1fa;
+  padding: 15px;
+  border-radius: 12px;
+  margin-bottom: 10px;
+  text-align: center;
+  font-size: 16px;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#reviewActions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+/* Chart */
+canvas {
+  width: 100% !important;
+  height: auto !important;
+}
 
 /* ===== MODE SOMBRE ===== */
-#toggle-theme {
-  position: fixed; top: 15px; right: 15px; width: 40px; height: 40px;
-  border-radius: 50%; border: none; background: white; cursor: pointer;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.2); z-index: 1000;
+body.dark {
+  background: #121212;
+  color: #e0e0e0;
 }
 
-body.dark { background: #121212; color: #e0e0e0; }
-body.dark section { background: #1e1e1e; }
-body.dark header { background: #005A99; }
-body.dark input { background: #2a2a2a; color: white; border-color: #444; }
-body.dark .pill { background: #333; color: #ccc; }
+body.dark section {
+  background: #1e1e1e;
+}
+
+body.dark header {
+  background: #005A99;
+}
+
+body.dark input {
+  background: #2a2a2a;
+  color: white;
+  border-color: #444;
+}
+
+body.dark .pill {
+  background: #333;
+  color: #ccc;
+}
+
+body.dark #reviewCard {
+  background: #2a2a2a;
+}
