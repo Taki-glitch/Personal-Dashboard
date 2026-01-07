@@ -192,13 +192,30 @@ function filterByTag(cards) {
 }
 
 /* =====================================
-   PAQUET DE RÉVISION
+   PAQUETS INTELLIGENTS
 ===================================== */
-function generatePack() {
-  let pack = getCardsToReview(flashcards);
+function generatePack(type = "review") {
+  let pack = [];
+
+  switch (type) {
+    case "new":
+      pack = flashcards.filter(c => c.repetitions === 0);
+      break;
+    case "review":
+      pack = flashcards.filter(c => c.repetitions > 0 && c.nextReview <= todayISO());
+      break;
+    case "known":
+      pack = flashcards.filter(c => c.repetitions >= 5);
+      break;
+    default:
+      pack = flashcards.filter(c => c.nextReview <= todayISO());
+      break;
+  }
+
+  // Filtrer par tag
   pack = filterByTag(pack);
 
-  // Tri par difficulté (préparation étape 4)
+  // Tri par difficulté : plus d'erreurs → priorité haute
   pack.sort((a, b) => {
     const scoreA = a.erreurs / (a.repetitions || 1);
     const scoreB = b.erreurs / (b.repetitions || 1);
@@ -209,10 +226,10 @@ function generatePack() {
 }
 
 /* =====================================
-   SESSION
+   SESSION – START DU PAQUET
 ===================================== */
-function startPack() {
-  reviewPack = generatePack();
+function startPack(type = "review") {
+  reviewPack = generatePack(type);
   currentIndex = 0;
 
   if (reviewPack.length === 0) {
@@ -324,7 +341,24 @@ document.getElementById("know").addEventListener("click", () => {
   nextCard();
 });
 
-document.getElementById("tagFilter").addEventListener("change", startPack);
+/* =====================================
+   BOUTONS PAQUETS INTELLIGENTS
+===================================== */
+document.querySelectorAll(".review-filters button").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".review-filters button").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    startPack(btn.dataset.pack);
+  });
+});
+
+/* =====================================
+   FILTRE TAG CHANGE
+===================================== */
+document.getElementById("tagFilter").addEventListener("change", () => {
+  const activeBtn = document.querySelector(".review-filters button.active");
+  startPack(activeBtn ? activeBtn.dataset.pack : "review");
+});
 
 /* =====================================
    INIT
