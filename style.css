@@ -311,6 +311,71 @@ canvas {
   height: auto !important;
 }
 
+/* ===== TRANSITIONS GÉNÉRALES POUR LES CARTES ===== */
+.card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+}
+
+/* ===== BOUTONS HOVER & CLIQUE ===== */
+button {
+  transition: background 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+}
+
+button:hover {
+  background: #005A99;
+  transform: translateY(-2px);
+  box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+}
+
+button:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+
+/* ===== FLASHCARD RÉVISION ===== */
+#reviewCard {
+  transition: background 0.3s ease, transform 0.2s ease;
+}
+
+#reviewCard:hover {
+  transform: scale(1.02);
+  background: #d0e6f9; /* Légère variation au hover */
+}
+
+/* ===== PILL TAGS ===== */
+.pill {
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.pill:hover {
+  background: #d0d0d0;
+  transform: translateY(-2px);
+}
+
+/* ===== INPUTS FOCUS ===== */
+input:focus {
+  outline: none;
+  border-color: #007ACC;
+  box-shadow: 0 0 5px rgba(0,122,204,0.5);
+}
+
+/* ===== HEADER HOVER ===== */
+header a:hover {
+  text-decoration: underline;
+  color: #e0e0e0;
+}
+
+/* ===== TRANSITIONS MODES SOMBRES ===== */
+body, header, section, input, .pill, #reviewCard {
+  transition: background 0.3s ease, color 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+
 /* ===== MODE SOMBRE ===== */
 body.dark {
   background: #121212;
