@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Flashcards – Russe</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+  <h1>📚 Flashcards – Russe</h1>
+  <a href="index.html">⬅ Retour au Dashboard</a>
+</header>
+
+<main>
+
+  <!-- Formulaire ajout flashcard -->
+  <section class="card">
+    <h2>➕ Ajouter une flashcard</h2>
+
+    <input type="text" id="russe" placeholder="Mot en russe">
+    <input type="text" id="francais" placeholder="Traduction française">
+
+    <button id="addFlashcard">Ajouter</button>
+  </section>
+
+  <!-- Liste des flashcards -->
+  <section class="card">
+    <h2>📋 Mes flashcards</h2>
+    <ul id="flashcardsList"></ul>
+  </section>
+
+</main>
+
+<script src="flashcards.js"></script>
+</body>
+</html>
