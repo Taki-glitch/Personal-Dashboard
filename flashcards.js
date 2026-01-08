@@ -230,27 +230,38 @@ function displayFlashcards() {
 }
 
 function updateFilters() {
-    const tagSelect = document.getElementById("tagFilter");
-    const langSelect = document.getElementById("langFilter");
+    // On récupère tous les sélecteurs
+    const langSelectors = [document.getElementById("langFilter"), document.getElementById("reviewLangFilter")];
+    const tagSelectors = [document.getElementById("tagFilter"), document.getElementById("reviewTagFilter")];
     const dataList = document.getElementById("existingLangs");
-    
+
     const tagsSet = new Set();
     const langsSet = new Set();
-    
+
     flashcards.forEach(c => {
         if (c.tags) c.tags.forEach(t => tagsSet.add(t));
         if (c.language) langsSet.add(c.language);
     });
 
-    // Mise à jour du filtre de révision (Langues)
-   const currentLang = langSelect.value;
-    langSelect.innerHTML = '<option value="all">Toutes les langues</option>';
-    [...langsSet].sort().forEach(l => {
-        langSelect.add(new Option(l, l));
+    // Mise à jour des menus Langues
+    langSelectors.forEach(sel => {
+        if (!sel) return;
+        const currentVal = sel.value;
+        sel.innerHTML = '<option value="all">Toutes les langues</option>';
+        [...langsSet].sort().forEach(l => sel.add(new Option(l, l)));
+        sel.value = currentVal;
     });
-    langSelect.value = currentLang;
 
-    // Mise à jour de l'aide à la saisie (Datalist)
+    // Mise à jour des menus Tags
+    tagSelectors.forEach(sel => {
+        if (!sel) return;
+        const currentVal = sel.value;
+        sel.innerHTML = '<option value="all">Tous les tags</option>';
+        [...tagsSet].sort().forEach(t => sel.add(new Option(t, t)));
+        sel.value = currentVal;
+    });
+
+    // Mise à jour de la datalist (aide à la saisie)
     if (dataList) {
         dataList.innerHTML = "";
         [...langsSet].forEach(l => {
