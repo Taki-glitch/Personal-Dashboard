@@ -1,5 +1,4 @@
 /* ==== 1. IMPORTS & CONFIGURATION ==== */
-// Note : Assurez-vous que logout est bien exporté dans auth.js
 import { auth, db, logout } from "./auth.js"; 
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { 
@@ -82,11 +81,32 @@ function renderAll() {
     renderTasks();
     loadRSS();
     updateFlashcardWidget();
+    displayWordOfTheDay(); // Ajouté : Affiche le mot russe
     const theme = localStorage.getItem("theme") || "light";
     applyTheme(theme);
 }
 
 /* ==== 4. MODULES DE L'APPLICATION ==== */
+
+// --- AJOUT : FONCTION MOT DU JOUR ---
+async function displayWordOfTheDay() {
+    try {
+        const response = await fetch("./list.json");
+        const words = await response.json();
+        
+        // Choisir un mot basé sur la date du jour
+        const dayOfYear = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
+        const word = words[dayOfYear % words.length];
+
+        const russeEl = document.getElementById("word-russe");
+        const tradEl = document.getElementById("word-trad");
+        
+        if (russeEl) russeEl.textContent = word.russe;
+        if (tradEl) tradEl.textContent = word.francais;
+    } catch (e) {
+        console.error("Erreur mot du jour :", e);
+    }
+}
 
 // --- THÈME ---
 function applyTheme(theme) {
@@ -191,22 +211,35 @@ window.removeFeed = async (index) => {
     await saveToCloud("rssFeeds", feeds);
 };
 
-// --- FLASHCARD WIDGET ---
+// --- FLASHCARD WIDGET (CORRIGÉ) ---
 function updateFlashcardWidget() {
     const widgetCount = document.getElementById("widget-count");
     if (!widgetCount) return;
 
+    // Recharge les données pour être à jour avec les autres pages
     const flashcards = JSON.parse(localStorage.getItem("flashcards") || "[]");
     const logData = JSON.parse(localStorage.getItem("revisionLog") || "{}");
     const today = new Date().toISOString().split("T")[0];
 
-    const countToReview = flashcards.filter(c => c.nextReview <= today).length;
+    // Calcul dynamique des cartes à réviser
+    const countToReview = flashcards.filter(c => {
+        if (!c.nextReview) return true;
+        return c.nextReview <= today;
+    }).length;
+
     widgetCount.textContent = countToReview === 0 ? "✅ Tout est à jour !" : `${countToReview} carte${countToReview > 1 ? 's' : ''} à réviser`;
 
-    let doneToday = logData[today] ? (logData[today].success || 0) + (logData[today].fail || 0) : 0;
+    let doneToday = 0;
+    if (logData[today]) {
+        doneToday = (logData[today].success || 0) + (logData[today].fail || 0);
+    }
+    
     const progressPercent = Math.min(100, Math.round((doneToday / 10) * 100));
     const progressBar = document.getElementById("widget-progress-bar");
-    if (progressBar) progressBar.style.width = `${progressPercent}%`;
+    if (progressBar) {
+        progressBar.style.width = `${progressPercent}%`;
+        progressBar.style.backgroundColor = progressPercent === 100 ? "#2ecc71" : "#007ACC";
+    }
 }
 
 /* ==== 5. INITIALISATION DES ÉVÉNEMENTS (DOM) ==== */
