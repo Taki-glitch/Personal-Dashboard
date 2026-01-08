@@ -237,8 +237,67 @@ function updatePerformanceDashboard() {
     const log = JSON.parse(localStorage.getItem("revisionLog") || "{}");
     const today = todayISO();
     const data = log[today] || { revisited: 0, success: 0, fail: 0 };
+    
+    // 1. Mise à jour des textes simples
     document.getElementById("todayRevised").textContent = `Cartes révisées aujourd'hui : ${data.revisited}`;
     document.getElementById("todaySuccess").textContent = `Réussites : ${data.success} / Échecs : ${data.fail}`;
+
+    // 2. Calcul et affichage des cartes pour DEMAIN
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowISO = tomorrow.toISOString().split("T")[0];
+    
+    // On cherche les cartes dont la date de révision est exactement demain
+    const priority = flashcards.filter(c => c.nextReview === tomorrowISO);
+    const priorityList = document.getElementById("priorityList");
+    
+    if (priorityList) {
+        priorityList.innerHTML = ""; // On vide la liste
+        if (priority.length === 0) {
+            priorityList.innerHTML = "<li>Aucune carte prévue pour demain.</li>";
+        } else {
+            priority.forEach(c => {
+                const li = document.createElement("li");
+                li.innerHTML = `<strong>${c.russe}</strong> <span style="color:gray;">(${c.francais})</span>`;
+                priorityList.appendChild(li);
+            });
+        }
+    }
+
+    // 3. Calcul et affichage du progrès par CATÉGORIE (Tags)
+    const tagMap = {};
+    flashcards.forEach(c => {
+        const tags = Array.isArray(c.tags) ? c.tags : (c.tag ? [c.tag] : ["Divers"]);
+        tags.forEach(t => {
+            if (!tagMap[t]) tagMap[t] = { total: 0, mastered: 0 };
+            tagMap[t].total++;
+            // On considère une carte maîtrisée si elle a plus de 4 répétitions réussies
+            if (c.repetitions >= 4) tagMap[t].mastered++;
+        });
+    });
+
+    const tagList = document.getElementById("tagList");
+    if (tagList) {
+        tagList.innerHTML = "";
+        const entries = Object.entries(tagMap);
+        
+        if (entries.length === 0) {
+            tagList.innerHTML = "<li>Aucune catégorie détectée.</li>";
+        } else {
+            entries.forEach(([tag, val]) => {
+                const li = document.createElement("li");
+                const percent = Math.round((val.mastered / val.total) * 100);
+                li.innerHTML = `
+                    <div style="width:100%">
+                        <strong>${tag}</strong> : ${val.mastered}/${val.total} maîtrisés (${percent}%)
+                        <div style="background:#eee; height:5px; border-radius:3px; margin-top:5px;">
+                            <div style="background:#007ACC; width:${percent}%; height:100%; border-radius:3px;"></div>
+                        </div>
+                    </div>`;
+                tagList.appendChild(li);
+            });
+        }
+    }
 }
 
 function updateTagFilter() {
@@ -321,6 +380,7 @@ document.addEventListener("DOMContentLoaded", () => {
         updateStats();
         displayFlashcards();
         updateTagFilter();
+        updatePerformanceDashboard();
         setTimeout(updateChart, 500);
     });
 });
