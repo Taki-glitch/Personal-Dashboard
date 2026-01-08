@@ -1,20 +1,21 @@
 /* =====================================
-   VARIABLES GLOBALES
+    VARIABLES GLOBALES
 ===================================== */
 let flashcards = [];
 let reviewPack = [];
 let currentIndex = 0;
 let currentCard = null;
+let startTime = Date.now(); // Démarrage du chrono pour le mode Sprint
 
 /* =====================================
-   UTILITAIRES DATE
+    UTILITAIRES DATE
 ===================================== */
 function todayISO() {
   return new Date().toISOString().split("T")[0];
 }
 
 /* =====================================
-   STOCKAGE LOCAL + LISTE GITHUB
+    STOCKAGE LOCAL + LISTE GITHUB
 ===================================== */
 async function loadFlashcards() {
   const localData = localStorage.getItem("flashcards");
@@ -61,7 +62,7 @@ function createFlashcard(russe, francais, tags = []) {
 }
 
 /* =====================================
-   LOGIQUE SRS (Spaced Repetition)
+    LOGIQUE SRS (Spaced Repetition)
 ===================================== */
 function applyGrade(card, grade) {
   const d = new Date();
@@ -86,13 +87,13 @@ function applyGrade(card, grade) {
 }
 
 /* =====================================
-   INTERFACE DE RÉVISION
+    INTERFACE DE RÉVISION
 ===================================== */
 function startReviewSession() {
     const tag = document.getElementById("tagFilter").value;
     const today = todayISO();
+    startTime = Date.now(); // Reset du chrono au début de la session
     
-    // Filtrage par date et par tag
     reviewPack = flashcards.filter(c => c.nextReview <= today);
     if (tag !== "all") {
         reviewPack = reviewPack.filter(c => c.tags.includes(tag));
@@ -101,12 +102,11 @@ function startReviewSession() {
     currentIndex = 0;
 
     if (reviewPack.length === 0) {
-        document.getElementById("reviewCard").innerHTML = "🎉 <br> Aucune carte à réviser pour le moment !";
+        document.getElementById("reviewCard").innerHTML = "🎉 <br> Aucune carte à réviser !";
         document.getElementById("startReview").style.display = "inline-block";
         return;
     }
 
-    // Gestion de l'affichage des boutons
     document.getElementById("startReview").style.display = "none";
     document.getElementById("showAnswer").style.display = "inline-block";
     showCard();
@@ -122,7 +122,6 @@ function showCard() {
         <p style="font-style: italic; color: #007ACC;">${currentCard.tags.join(', ')}</p>
     `;
 
-    // Cacher les boutons de réponse tant qu'on n'a pas cliqué sur "Voir"
     document.getElementById("know").style.display = "none";
     document.getElementById("dontKnow").style.display = "none";
     document.getElementById("hard").style.display = "none";
@@ -159,8 +158,28 @@ function handleGrade(grade) {
 }
 
 /* =====================================
-   STATISTIQUES & GRAPHIQUES
+    STATISTIQUES & GRAPHIQUES
 ===================================== */
+function logRevision(grade) {
+    const log = JSON.parse(localStorage.getItem("revisionLog") || "{}");
+    const today = todayISO();
+    
+    if (!log[today]) log[today] = { success: 0, fail: 0, timeSeconds: 0 };
+    
+    if (grade === 2 || grade === 1) {
+        log[today].success++;
+    } else {
+        log[today].fail++;
+    }
+
+    // Calcul du temps pour le mode Sprint
+    const sessionTime = Math.round((Date.now() - startTime) / 1000);
+    log[today].timeSeconds += sessionTime;
+    startTime = Date.now(); // On relance le chrono pour la carte suivante
+
+    localStorage.setItem("revisionLog", JSON.stringify(log));
+}
+
 function updateStats() {
   const today = todayISO();
   document.getElementById("stat-total").textContent = flashcards.length;
@@ -176,151 +195,71 @@ function updateStats() {
   updatePerformanceDashboard();
 }
 
-function logRevision(grade) {
-  const log = JSON.parse(localStorage.getItem("revisionLog") || "{}");
-  const today = todayISO();
-  
-  if (!log[today]) {
-    log[today] = { success: 0, fail: 0 }; // 'revisited' devient facultatif si on somme success + fail
-  }
-
-  // On compte grade 2 (connu) et grade 1 (difficile) comme des réussites de révision
-  if (grade === 2 || grade === 1) {
-    log[today].success++;
-  } else {
-    log[today].fail++;
-  }
-
-  localStorage.setItem("revisionLog", JSON.stringify(log));
-}
-
 function updateChart() {
   const log = JSON.parse(localStorage.getItem("revisionLog") || "{}");
-  const labels = Object.keys(log).sort().slice(-7); // On prend les 7 derniers jours
-  
+  const labels = Object.keys(log).sort().slice(-7);
   const ctx = document.getElementById("progressChart");
-  if (!ctx) return; // Sécurité si le canvas n'existe pas
-
+  if (!ctx) return;
   const chartCtx = ctx.getContext("2d");
+  if (window.progressChart instanceof Chart) window.progressChart.destroy();
   
-  // Détruire l'ancien graphique s'il existe pour éviter les superpositions au survol
-  if (window.progressChart instanceof Chart) {
-    window.progressChart.destroy();
-  }
-  
-  // Si pas de données, on affiche un message ou un graphique vide propre
-  const successData = labels.map(d => log[d].success || 0);
-  const failData = labels.map(d => log[d].fail || 0);
-
   window.progressChart = new Chart(chartCtx, {
     type: "bar",
     data: {
       labels: labels.length > 0 ? labels : [todayISO()],
       datasets: [
-        { 
-          label: "✅ Réussites", 
-          data: successData.length > 0 ? successData : [0], 
-          backgroundColor: '#2ecc71' 
-        },
-        { 
-          label: "❌ Échecs", 
-          data: failData.length > 0 ? failData : [0], 
-          backgroundColor: '#e74c3c' 
-        }
+        { label: "✅ Réussites", data: labels.map(d => log[d].success || 0), backgroundColor: '#2ecc71' },
+        { label: "❌ Échecs", data: labels.map(d => log[d].fail || 0), backgroundColor: '#e74c3c' }
       ]
     },
-    options: { 
-      responsive: true,
-      maintainAspectRatio: false, // Permet au CSS de contrôler la hauteur
-      scales: { 
-        y: { 
-          beginAtZero: true, 
-          ticks: { stepSize: 1, precision: 0 } 
-        } 
-      }
-    }
+    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
   });
 }
 
 function updatePerformanceDashboard() {
     const log = JSON.parse(localStorage.getItem("revisionLog") || "{}");
     const today = todayISO();
-    const data = log[today] || { revisited: 0, success: 0, fail: 0 };
+    const data = log[today] || { success: 0, fail: 0, timeSeconds: 0 };
     
-    // 1. Mise à jour des textes simples
-    document.getElementById("todayRevised").textContent = `Cartes révisées aujourd'hui : ${data.revisited}`;
+    document.getElementById("todayRevised").textContent = `Cartes révisées aujourd'hui : ${data.success + data.fail}`;
     document.getElementById("todaySuccess").textContent = `Réussites : ${data.success} / Échecs : ${data.fail}`;
 
-    // 2. Calcul et affichage des cartes pour DEMAIN
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const tomorrowISO = tomorrow.toISOString().split("T")[0];
-    
-    // On cherche les cartes dont la date de révision est exactement demain
-    const priority = flashcards.filter(c => c.nextReview === tomorrowISO);
-    const priorityList = document.getElementById("priorityList");
-    
-    if (priorityList) {
-        priorityList.innerHTML = ""; // On vide la liste
-        if (priority.length === 0) {
-            priorityList.innerHTML = "<li>Aucune carte prévue pour demain.</li>";
-        } else {
-            priority.forEach(c => {
-                const li = document.createElement("li");
-                li.innerHTML = `<strong>${c.russe}</strong> <span style="color:gray;">(${c.francais})</span>`;
-                priorityList.appendChild(li);
-            });
-        }
+    // Progrès par catégorie
+    const tagMap = {};
+    flashcards.forEach(c => {
+        const tags = Array.isArray(c.tags) ? c.tags : (c.tag ? [c.tag] : ["Divers"]);
+        tags.forEach(t => {
+            if (!tagMap[t]) tagMap[t] = { total: 0, totalProgress: 0 };
+            tagMap[t].total++;
+            const cardProgress = Math.min(100, (c.repetitions / 4) * 100);
+            tagMap[t].totalProgress += cardProgress;
+        });
+    });
+
+    const tagList = document.getElementById("tagList");
+    if (tagList) {
+        tagList.innerHTML = "";
+        Object.entries(tagMap).forEach(([tag, val]) => {
+            const avgPercent = Math.round(val.totalProgress / val.total);
+            const li = document.createElement("li");
+            li.innerHTML = `
+                <div style="width:100%; margin-bottom: 10px;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                        <strong>${tag}</strong><span>${avgPercent}%</span>
+                    </div>
+                    <div style="background:#eee; height:8px; border-radius:4px; overflow:hidden;">
+                        <div style="background:#007ACC; width:${avgPercent}%; height:100%; border-radius:4px; transition: width 0.5s ease;"></div>
+                    </div>
+                </div>`;
+            tagList.appendChild(li);
+        });
     }
-
-    // 3. Calcul et affichage du progrès par CATÉGORIE (Tags)
-   const tagMap = {};
-   flashcards.forEach(c => {
-       const tags = Array.isArray(c.tags) ? c.tags : (c.tag ? [c.tag] : ["Divers"]);
-       tags.forEach(t => {
-           if (!tagMap[t]) tagMap[t] = { total: 0, totalProgress: 0 };
-           tagMap[t].total++;
-        
-           // On calcule un progrès réel (0% à 100%) basé sur 4 répétitions cibles
-           // Une carte avec 2 répétitions sera considérée comme 50% apprise
-           const cardProgress = Math.min(100, (c.repetitions / 4) * 100);
-           tagMap[t].totalProgress += cardProgress;
-       });
-   });
-
-   const tagList = document.getElementById("tagList");
-   if (tagList) {
-       tagList.innerHTML = "";
-       const entries = Object.entries(tagMap);
-    
-       if (entries.length === 0) {
-           tagList.innerHTML = "<li>Aucune catégorie détectée.</li>";
-       } else {
-           entries.forEach(([tag, val]) => {
-               const li = document.createElement("li");
-               // Moyenne de progression du tag
-               const avgPercent = Math.round(val.totalProgress / val.total);
-            
-               li.innerHTML = `
-                   <div style="width:100%; margin-bottom: 10px;">
-                       <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-                           <strong>${tag}</strong>
-                           <span>${avgPercent}%</span>
-                       </div>
-                       <div style="background:#eee; height:8px; border-radius:4px; overflow:hidden;">
-                           <div style="background:#007ACC; width:${avgPercent}%; height:100%; border-radius:4px; transition: width 0.5s ease;"></div>
-                       </div>
-                   </div>`;
-               tagList.appendChild(li);
-           });
-       }
-   }
+}
 
 function updateTagFilter() {
   const select = document.getElementById("tagFilter");
   const tagsSet = new Set();
   flashcards.forEach(c => c.tags.forEach(t => tagsSet.add(t)));
-  
   const current = select.value;
   select.innerHTML = '<option value="all">Tous les tags</option>';
   [...tagsSet].sort().forEach(tag => {
@@ -333,103 +272,74 @@ function updateTagFilter() {
 
 function displayFlashcards() {
   const list = document.getElementById("flashcardsList");
-  const activeTag = document.getElementById("tagFilter").value; // On récupère le filtre actuel
+  const activeTag = document.getElementById("tagFilter").value;
   list.innerHTML = "";
+  let filtered = activeTag === "all" ? flashcards : flashcards.filter(c => c.tags.includes(activeTag));
 
-  // 1. On filtre les cartes selon le tag sélectionné
-  let filteredCards = flashcards;
-  if (activeTag !== "all") {
-    filteredCards = flashcards.filter(c => c.tags.includes(activeTag));
-  }
-
-  // 2. On affiche les cartes (inversées pour voir les plus récentes en haut)
-  [...filteredCards].reverse().forEach(card => {
+  [...filtered].reverse().forEach(card => {
     const li = document.createElement("li");
-    li.style.display = "flex";
-    li.style.justifyContent = "space-between";
-    li.style.alignItems = "center";
-    li.style.padding = "8px";
-    li.style.borderBottom = "1px solid #eee";
-
-    li.innerHTML = `
-      <span>
-        <strong>${card.russe}</strong> - ${card.francais} 
-        <br><small style="color: #007ACC;">${card.tags.join(', ')}</small>
-      </span>
-    `;
-
+    li.style.display = "flex"; li.style.justifyContent = "space-between";
+    li.style.padding = "8px"; li.style.borderBottom = "1px solid #eee";
+    li.innerHTML = `<span><strong>${card.russe}</strong> - ${card.francais}<br><small style="color: #007ACC;">${card.tags.join(', ')}</small></span>`;
+    
     const btn = document.createElement("button");
-    btn.textContent = "🗑️";
-    btn.style.background = "none";
-    btn.style.border = "none";
-    btn.style.cursor = "pointer";
+    btn.textContent = "🗑️"; btn.style.background = "none"; btn.style.border = "none";
     btn.onclick = () => {
-      if(confirm("Supprimer cette carte ?")) {
+      if(confirm("Supprimer ?")) {
         flashcards = flashcards.filter(c => c.id !== card.id);
-        saveFlashcards();
-        displayFlashcards();
-        updateStats();
-        updateTagFilter();
+        saveFlashcards(); displayFlashcards(); updateStats(); updateTagFilter();
       }
     };
-
     li.appendChild(btn);
     list.appendChild(li);
   });
 }
 
 /* =====================================
-   INITIALISATION & ÉVÉNEMENTS
+    INITIALISATION
 ===================================== */
 document.addEventListener("DOMContentLoaded", () => {
-    // 1. Menu et Thème
+    // Menu et Thème
     const menuBtn = document.getElementById("menu-btn");
     const sideMenu = document.getElementById("side-menu");
     const closeMenu = document.getElementById("close-menu");
     const overlay = document.getElementById("overlay");
     const toggleThemeBtn = document.getElementById("toggle-theme");
 
-    const closeMenuFn = () => { sideMenu.classList.remove("open"); overlay.classList.remove("show"); };
+    const closeFn = () => { sideMenu.classList.remove("open"); overlay.classList.remove("show"); };
     menuBtn.onclick = () => { sideMenu.classList.add("open"); overlay.classList.add("show"); };
-    closeMenu.onclick = closeMenuFn;
-    overlay.onclick = closeMenuFn;
+    closeMenu.onclick = closeFn; overlay.onclick = closeFn;
 
-    const applyTheme = (t) => {
-        document.body.classList.toggle("dark", t === "dark");
-        toggleThemeBtn.textContent = t === "dark" ? "☀️" : "🌙";
+    const theme = localStorage.getItem("theme") || "light";
+    document.body.classList.toggle("dark", theme === "dark");
+    toggleThemeBtn.onclick = () => {
+      const newT = document.body.classList.contains("dark") ? "light" : "dark";
+      localStorage.setItem("theme", newT);
+      document.body.classList.toggle("dark");
+      toggleThemeBtn.textContent = newT === "dark" ? "☀️" : "🌙";
     };
-    let theme = localStorage.getItem("theme") || "light";
-    applyTheme(theme);
-    toggleThemeBtn.onclick = () => { theme = theme === "light" ? "dark" : "light"; localStorage.setItem("theme", theme); applyTheme(theme); };
 
-    // 2. Boutons de Révision
+    // Events boutons
     document.getElementById("startReview").onclick = startReviewSession;
     document.getElementById("showAnswer").onclick = revealAnswer;
     document.getElementById("know").onclick = () => handleGrade(2);
     document.getElementById("hard").onclick = () => handleGrade(1);
     document.getElementById("dontKnow").onclick = () => handleGrade(0);
+    document.getElementById("tagFilter").onchange = displayFlashcards;
 
-    // 3. Ajout de carte
     document.getElementById("addFlashcard").onclick = () => {
         const r = document.getElementById("russe").value;
         const f = document.getElementById("francais").value;
         const t = document.getElementById("tag").value;
         if(r && f) {
             flashcards.push(createFlashcard(r, f, t ? [t] : []));
-            saveFlashcards();
-            displayFlashcards();
-            updateStats();
-            document.getElementById("russe").value = "";
-            document.getElementById("francais").value = "";
+            saveFlashcards(); displayFlashcards(); updateStats(); updateTagFilter();
+            document.getElementById("russe").value = ""; document.getElementById("francais").value = "";
         }
     };
 
-    // 4. Charger les données
     loadFlashcards().then(() => {
-        updateStats();
-        displayFlashcards();
-        updateTagFilter();
-        updatePerformanceDashboard();
+        updateStats(); displayFlashcards(); updateTagFilter(); updatePerformanceDashboard();
         setTimeout(updateChart, 500);
     });
 });
