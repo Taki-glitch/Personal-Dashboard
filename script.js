@@ -134,51 +134,80 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     };
 
-    /* --- FLASHCARD WIDGET --- */
+    /* --- FLASHCARD WIDGET AVEC SPRINT ET ALERTES --- */
     const updateFlashcardWidget = () => {
         const localData = localStorage.getItem("flashcards");
         const logData = localStorage.getItem("revisionLog");
+        const widget = document.getElementById("flashcard-widget");
         const widgetCount = document.getElementById("widget-count");
         const progressBar = document.getElementById("widget-progress-bar");
         const goalText = document.getElementById("widget-goal-text");
-    
-        if (!widgetCount || !progressBar) return;
+        const timerDisplay = document.getElementById("sprint-timer");
+        
+        if (!widget || !widgetCount) return;
 
         const today = new Date().toISOString().split("T")[0];
+        const now = new Date();
 
-        // 1. Calcul des cartes restant à réviser
+        // 1. Calcul des révisions
         let countToReview = 0;
+        let flashcards = [];
         if (localData) {
-            const flashcards = JSON.parse(localData);
+            flashcards = JSON.parse(localData);
             countToReview = flashcards.filter(c => c.nextReview <= today).length;
         }
 
-        // 2. Calcul du progrès (Total des révisions du jour)
+        // 2. Progrès et Chrono
         let doneToday = 0;
+        let timeSpent = 0;
         const dailyGoal = 10; 
+
         if (logData) {
             const log = JSON.parse(logData);
             if (log[today]) {
-                // On calcule le total réel : succès + échecs
                 doneToday = (log[today].success || 0) + (log[today].fail || 0);
+                timeSpent = log[today].timeSeconds || 0; 
             }
         }
 
-        // 3. Mise à jour visuelle
-        widgetCount.textContent = countToReview === 0 ? "✅ Tout est à jour !" : `${countToReview} carte${countToReview > 1 ? 's' : ''} à réviser`;
+        // Affichage Chrono (Format MM:SS)
+        const mins = Math.floor(timeSpent / 60).toString().padStart(2, '0');
+        const secs = (timeSpent % 60).toString().padStart(2, '0');
+        if (timerDisplay) timerDisplay.textContent = `⏱️ ${mins}:${secs}`;
 
+        // 3. Alerte visuelle (si après 18h et objectif non atteint)
+        if (now.getHours() >= 18 && doneToday < dailyGoal) {
+            widget.classList.add("sprint-alert");
+        } else {
+            widget.classList.remove("sprint-alert");
+        }
+
+        // 4. Mise à jour visuelle
+        widgetCount.textContent = countToReview === 0 ? "✅ Tout est à jour !" : `${countToReview} carte${countToReview > 1 ? 's' : ''} à réviser`;
         const progressPercent = Math.min(100, Math.round((doneToday / dailyGoal) * 100));
-        progressBar.style.width = `${progressPercent}%`;
-        goalText.textContent = `Objectif : ${doneToday}/${dailyGoal} cartes`;
-    
-        progressBar.style.backgroundColor = progressPercent >= 100 ? "#2ecc71" : "#007ACC";
+        if (progressBar) {
+            progressBar.style.width = `${progressPercent}%`;
+            progressBar.style.backgroundColor = progressPercent >= 100 ? "#2ecc71" : "#007ACC";
+        }
+        if (goalText) goalText.textContent = `Objectif : ${doneToday}/${dailyGoal} cartes`;
+
+        // 5. Widget "Mot du jour" (Aléatoire)
+        const wordRusseEl = document.getElementById("word-russe");
+        const wordTradEl = document.getElementById("word-trad");
+        if (flashcards.length > 0 && wordRusseEl && wordTradEl) {
+            const seed = now.getDate() + now.getMonth(); 
+            const randomIndex = seed % flashcards.length;
+            const dailyWord = flashcards[randomIndex];
+            wordRusseEl.textContent = dailyWord.russe;
+            wordTradEl.textContent = dailyWord.francais;
+        }
     };
 
     /* ==== INITIALISATION GÉNÉRALE ==== */
     renderTasks();
     fetchWeather();
     loadRSS();
-    updateFlashcardWidget(); // Appel du widget flashcards
+    updateFlashcardWidget(); // Appel du widget flashcards avec les nouvelles options
     
     document.getElementById("refresh-rss").onclick = loadRSS;
     
