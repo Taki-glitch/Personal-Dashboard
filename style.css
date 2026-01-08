@@ -181,6 +181,26 @@ canvas#progressChart {
 #dontKnow { background-color: #e74c3c; padding: 12px 20px; }
 #hard { background-color: #f39c12; padding: 12px 20px; }
 
+/* ===== NOUVEAUX STYLES AJOUTÉS ===== */
+.badge-lang {
+    background: #007ACC;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    margin-right: 8px;
+    text-transform: uppercase;
+    font-weight: bold;
+    display: inline-block; /* Pour s'assurer que le padding s'affiche bien */
+    vertical-align: middle;
+}
+
+/* Optionnel : Mode sombre pour mieux faire ressortir le badge */
+body.dark .badge-lang {
+    background: #3498db;
+    color: #ffffff;
+}
+
 /* ===== MODE SOMBRE ===== */
 body.dark { background: #121212; color: #e0e0e0; }
 body.dark section { background: #1e1e1e; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
