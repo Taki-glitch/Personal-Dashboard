@@ -274,40 +274,47 @@ function updatePerformanceDashboard() {
     }
 
     // 3. Calcul et affichage du progrès par CATÉGORIE (Tags)
-    const tagMap = {};
-    flashcards.forEach(c => {
-        const tags = Array.isArray(c.tags) ? c.tags : (c.tag ? [c.tag] : ["Divers"]);
-        tags.forEach(t => {
-            if (!tagMap[t]) tagMap[t] = { total: 0, mastered: 0 };
-            tagMap[t].total++;
-            // On considère une carte maîtrisée si elle a plus de 4 répétitions réussies
-            if (c.repetitions >= 4) tagMap[t].mastered++;
-        });
-    });
-
-    const tagList = document.getElementById("tagList");
-    if (tagList) {
-        tagList.innerHTML = "";
-        const entries = Object.entries(tagMap);
+   const tagMap = {};
+   flashcards.forEach(c => {
+       const tags = Array.isArray(c.tags) ? c.tags : (c.tag ? [c.tag] : ["Divers"]);
+       tags.forEach(t => {
+           if (!tagMap[t]) tagMap[t] = { total: 0, totalProgress: 0 };
+           tagMap[t].total++;
         
-        if (entries.length === 0) {
-            tagList.innerHTML = "<li>Aucune catégorie détectée.</li>";
-        } else {
-            entries.forEach(([tag, val]) => {
-                const li = document.createElement("li");
-                const percent = Math.round((val.mastered / val.total) * 100);
-                li.innerHTML = `
-                    <div style="width:100%">
-                        <strong>${tag}</strong> : ${val.mastered}/${val.total} maîtrisés (${percent}%)
-                        <div style="background:#eee; height:5px; border-radius:3px; margin-top:5px;">
-                            <div style="background:#007ACC; width:${percent}%; height:100%; border-radius:3px;"></div>
-                        </div>
-                    </div>`;
-                tagList.appendChild(li);
-            });
-        }
-    }
-}
+           // On calcule un progrès réel (0% à 100%) basé sur 4 répétitions cibles
+           // Une carte avec 2 répétitions sera considérée comme 50% apprise
+           const cardProgress = Math.min(100, (c.repetitions / 4) * 100);
+           tagMap[t].totalProgress += cardProgress;
+       });
+   });
+
+   const tagList = document.getElementById("tagList");
+   if (tagList) {
+       tagList.innerHTML = "";
+       const entries = Object.entries(tagMap);
+    
+       if (entries.length === 0) {
+           tagList.innerHTML = "<li>Aucune catégorie détectée.</li>";
+       } else {
+           entries.forEach(([tag, val]) => {
+               const li = document.createElement("li");
+               // Moyenne de progression du tag
+               const avgPercent = Math.round(val.totalProgress / val.total);
+            
+               li.innerHTML = `
+                   <div style="width:100%; margin-bottom: 10px;">
+                       <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                           <strong>${tag}</strong>
+                           <span>${avgPercent}%</span>
+                       </div>
+                       <div style="background:#eee; height:8px; border-radius:4px; overflow:hidden;">
+                           <div style="background:#007ACC; width:${avgPercent}%; height:100%; border-radius:4px; transition: width 0.5s ease;"></div>
+                       </div>
+                   </div>`;
+               tagList.appendChild(li);
+           });
+       }
+   }
 
 function updateTagFilter() {
   const select = document.getElementById("tagFilter");
