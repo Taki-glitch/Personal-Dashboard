@@ -1,70 +1,84 @@
+import { auth, db } from "./auth.js";
+import { doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
 /* =====================================
     VARIABLES GLOBALES
 ===================================== */
 let flashcards = [];
-let revisionLog = {};
+let revisionLog = {}; // Initialisé pour éviter l'erreur "undefined"
 let reviewPack = [];
 let currentIndex = 0;
 let currentCard = null;
-let startTime = Date.now(); // Démarrage du chrono pour le mode Sprint
+let startTime = Date.now();
 
 /* =====================================
-    UTILITAIRES DATE
+    UTILITAIRES
 ===================================== */
 function todayISO() {
   return new Date().toISOString().split("T")[0];
 }
 
-/* =====================================
-    STOCKAGE LOCAL + LISTE GITHUB
-===================================== */
-async function loadFlashcards() {
-  const localData = localStorage.getItem("flashcards");
-  flashcards = localData ? JSON.parse(localData) : [];
+// FUSION DES DEUX FONCTIONS SAVE : Une seule fonction robuste
+async function saveFlashcards() {
+    // 1. Sauvegarde locale systématique
+    localStorage.setItem("flashcards", JSON.stringify(flashcards));
+    localStorage.setItem("revisionLog", JSON.stringify(revisionLog));
 
-  try {
-    const response = await fetch("https://raw.githubusercontent.com/Taki-glitch/Personal-Dashboard/main/list.json");
-    if (!response.ok) throw new Error("Impossible de charger la liste de base");
-    const baseFlashcards = await response.json();
-
-    const existingSet = new Set(flashcards.map(c => c.russe.toLowerCase() + "|" + c.francais.toLowerCase()));
-
-    baseFlashcards.forEach(c => {
-        const key = c.russe.toLowerCase() + "|" + c.francais.toLowerCase();
-        if (!existingSet.has(key)) {
-            const tags = c.tag ? [c.tag] : (c.tags || []);
-            const newCard = createFlashcard(c.russe, c.francais, tags);
-            newCard.id = Date.now() + Math.floor(Math.random() * 1000000);
-            flashcards.push(newCard);
+    // 2. Sauvegarde Cloud (seulement si connecté)
+    if (auth.currentUser) {
+        try {
+            const userRef = doc(db, "users", auth.currentUser.uid);
+            await updateDoc(userRef, {
+                flashcards: flashcards,
+                revisionLog: revisionLog
+            });
+            console.log("☁️ Synchro Cloud réussie !");
+        } catch (e) {
+            console.error("❌ Erreur synchro Cloud :", e);
         }
-    });
-    saveFlashcards();
-  } catch (err) {
-    console.error("Erreur chargement GitHub :", err);
-  }
+    }
 }
 
-async function saveFlashcards() {
-  localStorage.setItem("flashcards", JSON.stringify(flashcards));
-  localStorage.setItem("revisionLog", JSON.stringify(revisionLog));
-  
-  // Si tu as accès à auth et db dans ce fichier :
-  if (typeof auth !== 'undefined' && auth.currentUser) {
-      const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
-      const ref = doc(db, "users", auth.currentUser.uid);
-      await updateDoc(ref, { 
-          flashcards: flashcards,
-          revisionLog: revisionLog 
-      });
-  }
+/* =====================================
+    STOCKAGE & CHARGEMENT
+===================================== */
+async function loadFlashcards() {
+    const localData = localStorage.getItem("flashcards");
+    flashcards = localData ? JSON.parse(localData) : [];
+
+    const localLog = localStorage.getItem("revisionLog");
+    revisionLog = localLog ? JSON.parse(localLog) : {}; 
+
+    try {
+        const response = await fetch("https://raw.githubusercontent.com/Taki-glitch/Personal-Dashboard/main/list.json");
+        if (!response.ok) throw new Error("Impossible de charger la liste GitHub");
+        
+        const baseFlashcards = await response.json();
+        const existingSet = new Set(flashcards.map(c => c.russe.toLowerCase() + "|" + c.francais.toLowerCase()));
+
+        baseFlashcards.forEach(c => {
+            const key = c.russe.toLowerCase() + "|" + c.francais.toLowerCase();
+            if (!existingSet.has(key)) {
+                const tags = c.tag ? [c.tag] : (c.tags || []);
+                const newCard = createFlashcard(c.russe, c.francais, tags);
+                newCard.id = Date.now() + Math.floor(Math.random() * 1000000);
+                flashcards.push(newCard);
+            }
+        });
+
+        await saveFlashcards(); // Sauvegarde la fusion
+        
+    } catch (err) {
+        console.error("⚠️ Info : Chargement liste GitHub ignoré (utilisation local uniquement)", err);
+    }
 }
 
 function createFlashcard(russe, francais, tags = []) {
   return {
-    id: Date.now(),
+    id: Date.now() + Math.floor(Math.random() * 1000),
     russe,
     francais,
-    tags,
+    tags: Array.isArray(tags) ? tags : [tags],
     repetitions: 0,
     erreurs: 0,
     interval: 1,
@@ -74,7 +88,7 @@ function createFlashcard(russe, francais, tags = []) {
 }
 
 /* =====================================
-    LOGIQUE SRS (Spaced Repetition)
+    LOGIQUE SRS & RÉVISIONS
 ===================================== */
 function applyGrade(card, grade) {
   const d = new Date();
@@ -98,13 +112,10 @@ function applyGrade(card, grade) {
   card.nextReview = d.toISOString().split("T")[0];
 }
 
-/* =====================================
-    INTERFACE DE RÉVISION
-===================================== */
 function startReviewSession() {
     const tag = document.getElementById("tagFilter").value;
     const today = todayISO();
-    startTime = Date.now(); // Reset du chrono au début de la session
+    startTime = Date.now();
     
     reviewPack = flashcards.filter(c => c.nextReview <= today);
     if (tag !== "all") {
@@ -120,7 +131,6 @@ function startReviewSession() {
     }
 
     document.getElementById("startReview").style.display = "none";
-    document.getElementById("showAnswer").style.display = "inline-block";
     showCard();
 }
 
@@ -129,7 +139,7 @@ function showCard() {
     const cardArea = document.getElementById("reviewCard");
     
     cardArea.innerHTML = `
-        <small style="color: gray;">Card ${currentIndex + 1} / ${reviewPack.length}</small>
+        <small style="color: gray;">Carte ${currentIndex + 1} / ${reviewPack.length}</small>
         <h1 style="font-size: 2.5rem; margin: 10px 0;">${currentCard.russe}</h1>
         <p style="font-style: italic; color: #007ACC;">${currentCard.tags.join(', ')}</p>
     `;
@@ -150,16 +160,16 @@ function revealAnswer() {
     document.getElementById("hard").style.display = "inline-block";
 }
 
-function handleGrade(grade) {
+async function handleGrade(grade) {
     applyGrade(currentCard, grade);
-    saveFlashcards();
-    logRevision(grade);
+    logRevision(grade); // Met à jour le revisionLog localement
+    await saveFlashcards(); // Envoie tout au cloud et localStorage
     
     currentIndex++;
     if (currentIndex < reviewPack.length) {
         showCard();
     } else {
-        document.getElementById("reviewCard").innerHTML = "✅ Session terminée ! Bravo.";
+        document.getElementById("reviewCard").innerHTML = "✅ Session terminée !";
         document.getElementById("know").style.display = "none";
         document.getElementById("dontKnow").style.display = "none";
         document.getElementById("hard").style.display = "none";
@@ -169,29 +179,24 @@ function handleGrade(grade) {
     }
 }
 
-/* =====================================
-    STATISTIQUES & GRAPHIQUES
-===================================== */
 function logRevision(grade) {
-    const log = JSON.parse(localStorage.getItem("revisionLog") || "{}");
     const today = todayISO();
+    if (!revisionLog[today]) revisionLog[today] = { success: 0, fail: 0, timeSeconds: 0 };
     
-    if (!log[today]) log[today] = { success: 0, fail: 0, timeSeconds: 0 };
-    
-    if (grade === 2 || grade === 1) {
-        log[today].success++;
+    if (grade >= 1) {
+        revisionLog[today].success++;
     } else {
-        log[today].fail++;
+        revisionLog[today].fail++;
     }
 
-    // Calcul du temps pour le mode Sprint
     const sessionTime = Math.round((Date.now() - startTime) / 1000);
-    log[today].timeSeconds += sessionTime;
-    startTime = Date.now(); // On relance le chrono pour la carte suivante
-
-    localStorage.setItem("revisionLog", JSON.stringify(log));
+    revisionLog[today].timeSeconds += sessionTime;
+    startTime = Date.now();
 }
 
+/* =====================================
+    UI & GRAPHIQUES
+===================================== */
 function updateStats() {
   const today = todayISO();
   document.getElementById("stat-total").textContent = flashcards.length;
@@ -208,42 +213,39 @@ function updateStats() {
 }
 
 function updateChart() {
-  const log = JSON.parse(localStorage.getItem("revisionLog") || "{}");
-  const labels = Object.keys(log).sort().slice(-7);
+  const labels = Object.keys(revisionLog).sort().slice(-7);
   const ctx = document.getElementById("progressChart");
   if (!ctx) return;
-  const chartCtx = ctx.getContext("2d");
+  
   if (window.progressChart instanceof Chart) window.progressChart.destroy();
   
-  window.progressChart = new Chart(chartCtx, {
+  window.progressChart = new Chart(ctx.getContext("2d"), {
     type: "bar",
     data: {
       labels: labels.length > 0 ? labels : [todayISO()],
       datasets: [
-        { label: "✅ Réussites", data: labels.map(d => log[d].success || 0), backgroundColor: '#2ecc71' },
-        { label: "❌ Échecs", data: labels.map(d => log[d].fail || 0), backgroundColor: '#e74c3c' }
+        { label: "✅ Réussites", data: labels.map(d => revisionLog[d].success || 0), backgroundColor: '#2ecc71' },
+        { label: "❌ Échecs", data: labels.map(d => revisionLog[d].fail || 0), backgroundColor: '#e74c3c' }
       ]
     },
-    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+    options: { responsive: true, maintainAspectRatio: false }
   });
 }
 
 function updatePerformanceDashboard() {
-    const log = JSON.parse(localStorage.getItem("revisionLog") || "{}");
     const today = todayISO();
-    const data = log[today] || { success: 0, fail: 0, timeSeconds: 0 };
+    const data = revisionLog[today] || { success: 0, fail: 0, timeSeconds: 0 };
     
     document.getElementById("todayRevised").textContent = `Cartes révisées aujourd'hui : ${data.success + data.fail}`;
     document.getElementById("todaySuccess").textContent = `Réussites : ${data.success} / Échecs : ${data.fail}`;
 
-    // Progrès par catégorie
     const tagMap = {};
     flashcards.forEach(c => {
-        const tags = Array.isArray(c.tags) ? c.tags : (c.tag ? [c.tag] : ["Divers"]);
+        const tags = c.tags || ["Divers"];
         tags.forEach(t => {
             if (!tagMap[t]) tagMap[t] = { total: 0, totalProgress: 0 };
             tagMap[t].total++;
-            const cardProgress = Math.min(100, (c.repetitions / 4) * 100);
+            const cardProgress = Math.min(100, (c.repetitions / 5) * 100);
             tagMap[t].totalProgress += cardProgress;
         });
     });
@@ -260,7 +262,7 @@ function updatePerformanceDashboard() {
                         <strong>${tag}</strong><span>${avgPercent}%</span>
                     </div>
                     <div style="background:#eee; height:8px; border-radius:4px; overflow:hidden;">
-                        <div style="background:#007ACC; width:${avgPercent}%; height:100%; border-radius:4px; transition: width 0.5s ease;"></div>
+                        <div style="background:#007ACC; width:${avgPercent}%; height:100%;"></div>
                     </div>
                 </div>`;
             tagList.appendChild(li);
@@ -290,16 +292,15 @@ function displayFlashcards() {
 
   [...filtered].reverse().forEach(card => {
     const li = document.createElement("li");
-    li.style.display = "flex"; li.style.justifyContent = "space-between";
-    li.style.padding = "8px"; li.style.borderBottom = "1px solid #eee";
+    li.style = "display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #eee;";
     li.innerHTML = `<span><strong>${card.russe}</strong> - ${card.francais}<br><small style="color: #007ACC;">${card.tags.join(', ')}</small></span>`;
     
     const btn = document.createElement("button");
-    btn.textContent = "🗑️"; btn.style.background = "none"; btn.style.border = "none";
-    btn.onclick = () => {
+    btn.textContent = "🗑️"; btn.style = "background: none; border: none; cursor: pointer;";
+    btn.onclick = async () => {
       if(confirm("Supprimer ?")) {
         flashcards = flashcards.filter(c => c.id !== card.id);
-        saveFlashcards(); displayFlashcards(); updateStats(); updateTagFilter();
+        await saveFlashcards(); displayFlashcards(); updateStats(); updateTagFilter();
       }
     };
     li.appendChild(btn);
@@ -308,30 +309,29 @@ function displayFlashcards() {
 }
 
 /* =====================================
-    INITIALISATION
+    INIT DOM
 ===================================== */
 document.addEventListener("DOMContentLoaded", () => {
-    // Menu et Thème
+    // Menu
     const menuBtn = document.getElementById("menu-btn");
     const sideMenu = document.getElementById("side-menu");
     const closeMenu = document.getElementById("close-menu");
     const overlay = document.getElementById("overlay");
-    const toggleThemeBtn = document.getElementById("toggle-theme");
-
     const closeFn = () => { sideMenu.classList.remove("open"); overlay.classList.remove("show"); };
     menuBtn.onclick = () => { sideMenu.classList.add("open"); overlay.classList.add("show"); };
     closeMenu.onclick = closeFn; overlay.onclick = closeFn;
 
+    // Thème
+    const toggleThemeBtn = document.getElementById("toggle-theme");
     const theme = localStorage.getItem("theme") || "light";
     document.body.classList.toggle("dark", theme === "dark");
     toggleThemeBtn.onclick = () => {
-      const newT = document.body.classList.contains("dark") ? "light" : "dark";
-      localStorage.setItem("theme", newT);
-      document.body.classList.toggle("dark");
-      toggleThemeBtn.textContent = newT === "dark" ? "☀️" : "🌙";
+      const isDark = document.body.classList.toggle("dark");
+      localStorage.setItem("theme", isDark ? "dark" : "light");
+      toggleThemeBtn.textContent = isDark ? "☀️" : "🌙";
     };
 
-    // Events boutons
+    // Boutons révision
     document.getElementById("startReview").onclick = startReviewSession;
     document.getElementById("showAnswer").onclick = revealAnswer;
     document.getElementById("know").onclick = () => handleGrade(2);
@@ -339,17 +339,19 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("dontKnow").onclick = () => handleGrade(0);
     document.getElementById("tagFilter").onchange = displayFlashcards;
 
-    document.getElementById("addFlashcard").onclick = () => {
+    // Ajout manuel
+    document.getElementById("addFlashcard").onclick = async () => {
         const r = document.getElementById("russe").value;
         const f = document.getElementById("francais").value;
         const t = document.getElementById("tag").value;
         if(r && f) {
-            flashcards.push(createFlashcard(r, f, t ? [t] : []));
-            saveFlashcards(); displayFlashcards(); updateStats(); updateTagFilter();
+            flashcards.push(createFlashcard(r, f, t ? t.split(',') : []));
+            await saveFlashcards(); displayFlashcards(); updateStats(); updateTagFilter();
             document.getElementById("russe").value = ""; document.getElementById("francais").value = "";
         }
     };
 
+    // Lancement
     loadFlashcards().then(() => {
         updateStats(); displayFlashcards(); updateTagFilter(); updatePerformanceDashboard();
         setTimeout(updateChart, 500);
