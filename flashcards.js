@@ -341,13 +341,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Ajout manuel
     document.getElementById("addFlashcard").onclick = async () => {
-        const r = document.getElementById("russe").value;
-        const f = document.getElementById("francais").value;
-        const t = document.getElementById("tag").value;
-        if(r && f) {
-            flashcards.push(createFlashcard(r, f, t ? t.split(',') : []));
-            await saveFlashcards(); displayFlashcards(); updateStats(); updateTagFilter();
-            document.getElementById("russe").value = ""; document.getElementById("francais").value = "";
+    const r = document.getElementById("russe").value;
+    const f = document.getElementById("francais").value;
+    const t = document.getElementById("tag").value;
+    if(r && f) {
+        // .trim() permet d'éviter d'avoir des tags comme " nom" avec un espace
+        const tagsArray = t ? t.split(',').map(tag => tag.trim()) : []; 
+        
+        flashcards.push(createFlashcard(r, f, tagsArray));
+        await saveFlashcards(); 
+        displayFlashcards(); 
+        updateStats(); 
+        updateTagFilter();
+        
+        document.getElementById("russe").value = ""; 
+        document.getElementById("francais").value = "";
+        document.getElementById("tag").value = ""; // On vide aussi le champ tag
         }
     };
 
