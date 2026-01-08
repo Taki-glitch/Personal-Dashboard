@@ -43,8 +43,19 @@ async function loadFlashcards() {
   }
 }
 
-function saveFlashcards() {
+async function saveFlashcards() {
   localStorage.setItem("flashcards", JSON.stringify(flashcards));
+  localStorage.setItem("revisionLog", JSON.stringify(revisionLog));
+  
+  // Si tu as accès à auth et db dans ce fichier :
+  if (typeof auth !== 'undefined' && auth.currentUser) {
+      const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+      const ref = doc(db, "users", auth.currentUser.uid);
+      await updateDoc(ref, { 
+          flashcards: flashcards,
+          revisionLog: revisionLog 
+      });
+  }
 }
 
 function createFlashcard(russe, francais, tags = []) {
