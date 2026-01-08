@@ -2,6 +2,7 @@
     VARIABLES GLOBALES
 ===================================== */
 let flashcards = [];
+let revisionLog = {};
 let reviewPack = [];
 let currentIndex = 0;
 let currentCard = null;
