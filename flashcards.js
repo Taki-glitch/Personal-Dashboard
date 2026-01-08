@@ -179,9 +179,18 @@ function updateStats() {
 function logRevision(grade) {
   const log = JSON.parse(localStorage.getItem("revisionLog") || "{}");
   const today = todayISO();
-  if (!log[today]) log[today] = { revisited: 0, success: 0, fail: 0 };
-  log[today].revisited++;
-  grade === 2 ? log[today].success++ : log[today].fail++;
+  
+  if (!log[today]) {
+    log[today] = { success: 0, fail: 0 }; // 'revisited' devient facultatif si on somme success + fail
+  }
+
+  // On compte grade 2 (connu) et grade 1 (difficile) comme des réussites de révision
+  if (grade === 2 || grade === 1) {
+    log[today].success++;
+  } else {
+    log[today].fail++;
+  }
+
   localStorage.setItem("revisionLog", JSON.stringify(log));
 }
 
