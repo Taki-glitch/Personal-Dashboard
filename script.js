@@ -237,12 +237,17 @@ window.removeFeed = async (index) => {
 
 // Fonction d'animation de célébration
 function launchCelebration() {
+    // On vérifie si la bibliothèque confetti est bien chargée dans le HTML
     if (typeof confetti === 'function') {
         confetti({
             particleCount: 150,
             spread: 70,
-            origin: { y: 0.6 }
+            origin: { y: 0.6 },
+            colors: ['#007ACC', '#2ecc71', '#ffcc00'],
+            zIndex: 9999 // Pour être sûr que ça passe au-dessus de tout
         });
+    } else {
+        console.warn("La bibliothèque confetti n'est pas chargée.");
     }
 }
 
@@ -300,16 +305,6 @@ function updateFlashcardWidget() {
         progressBar.style.width = `${progressPercent}%`;
         progressBar.style.backgroundColor = progressPercent === 100 ? "#2ecc71" : "#007ACC";
     }
-}
-
-// Fonction pour l'effet visuel
-function launchCelebration() {
-    confetti({
-        particleCount: 150,
-        spread: 70,
-        origin: { y: 0.6 },
-        colors: ['#007ACC', '#2ecc71', '#ffcc00']
-    });
 }
 
 /* ==== 5. INITIALISATION DES ÉVÉNEMENTS (DOM) ==== */
