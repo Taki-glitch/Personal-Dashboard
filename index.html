@@ -5,100 +5,102 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mon Dashboard Personnel</title>
   <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
 <body>
   
-<button id="toggle-theme" aria-label="Changer le thème">🌙</button>
+  <button id="toggle-theme" aria-label="Changer le thème">🌙</button>
+  <button id="menu-btn" aria-label="Ouvrir le menu">☰</button>
 
-<button id="menu-btn" aria-label="Ouvrir le menu">☰</button>
+  <nav id="side-menu">
+    <button id="close-menu" aria-label="Fermer le menu">✕</button>
 
-<nav id="side-menu">
-  <button id="close-menu" aria-label="Fermer le menu">✕</button>
+    <div id="user-profile" style="padding: 20px; border-bottom: 1px solid #eee; text-align: center;">
+        <p id="user-status" style="font-size: 0.9rem; color: gray; margin-bottom: 10px;">Chargement...</p>
+        <div id="user-info" style="display: none;">
+            <strong id="user-name" style="display: block; margin-bottom: 10px; font-size: 1rem; color: #333;">Utilisateur</strong>
+            <button id="btn-logout" style="background: none; border: 1px solid #e74c3c; color: #e74c3c; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 0.8rem; width: 100%;">Déconnexion</button>
+        </div>
+        <div id="user-guest" style="display: none;">
+            <a href="login.html" class="btn-primary" style="text-decoration: none; font-size: 0.8rem; padding: 8px 12px; display: block;">Se connecter</a>
+        </div>
+    </div>
 
-  <div id="user-profile" style="padding: 20px; border-bottom: 1px solid #eee; text-align: center;">
-      <p id="user-status" style="font-size: 0.9rem; color: gray; margin-bottom: 10px;">Chargement...</p>
-      <div id="user-info" style="display: none;">
-          <strong id="user-name" style="display: block; margin-bottom: 10px; font-size: 1rem; color: #333;">Utilisateur</strong>
-          <button id="btn-logout" style="background: none; border: 1px solid #e74c3c; color: #e74c3c; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 0.8rem; width: 100%;">Déconnexion</button>
+    <ul>
+      <li><a href="index.html" class="active">📊 Dashboard</a></li>
+      <li><a href="flashcards.html">🧠 Flashcards</a></li>
+    </ul>
+  </nav>
+
+  <div id="overlay"></div>
+
+  <header>
+    <h1>Bienvenue !</h1>
+
+    <div id="weather-bar">
+      <div class="weather-day">
+        <div class="weather-title">Aujourd’hui</div>
+        <div class="weather-hours" id="weather-today"></div>
       </div>
-      <div id="user-guest" style="display: none;">
-          <a href="login.html" class="btn-primary" style="text-decoration: none; font-size: 0.8rem; padding: 8px 12px; display: block;">Se connecter</a>
+      <div class="weather-day">
+        <div class="weather-title">Demain</div>
+        <div class="weather-hours" id="weather-tomorrow"></div>
       </div>
-  </div>
-
-  <ul>
-    <li><a href="index.html" class="active">📊 Dashboard</a></li>
-    <li><a href="flashcards.html" class="active">🧠 Flashcards</a></li>
-  </ul>
-</nav>
-
-<div id="overlay"></div>
-
-<header>
-  <h1>Bienvenue !</h1>
-
-  <div id="weather-bar">
-    <div class="weather-day">
-      <div class="weather-title">Aujourd’hui</div>
-      <div class="weather-hours" id="weather-today"></div>
     </div>
-    <div class="weather-day">
-      <div class="weather-title">Demain</div>
-      <div class="weather-hours" id="weather-tomorrow"></div>
-    </div>
-  </div>
-</header>
+  </header>
 
-<main>
-   <section id="flashcard-widget" class="card">
-    <h2>🧠 Révisions du jour <span id="sprint-timer" style="font-size: 0.9rem; font-weight: normal; color: #007ACC; float: right;">⏱️ 00:00</span></h2>
-    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px;">
-      <div>
-        <p id="widget-count" style="font-size: 1.2rem; margin: 0;">Chargement...</p>
-        <small id="widget-goal-text" style="color: gray;">Objectif : 0/10</small>
+  <main>
+    <section id="flashcard-widget" class="card">
+      <h2>🧠 Révisions du jour <span id="sprint-timer" style="font-size: 0.9rem; font-weight: normal; color: #007ACC; float: right;">⏱️ 00:00</span></h2>
+      
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px;">
+        <div>
+          <p id="widget-count" style="font-size: 1.2rem; margin: 0; font-weight: bold;">Chargement...</p>
+          <p id="widget-goal-text" style="font-size: 0.9rem; margin: 5px 0 0 0; color: gray;">Objectif : 0/10</p>
+        </div>
+        <a href="flashcards.html" class="btn-primary" style="text-decoration: none; background: #007ACC; color: white; padding: 12px 18px; border-radius: 8px; font-weight: bold;">
+          🚀 Réviser
+        </a>
       </div>
-      <a href="flashcards.html" class="btn-primary" style="text-decoration: none; background: #007ACC; color: white; padding: 10px 15px; border-radius: 8px;">
-      🚀 Réviser
-      </a>
-    </div>
-    <div style="background: #eee; height: 10px; border-radius: 5px; overflow: hidden; width: 100%;">
-      <div id="widget-progress-bar" style="background: #007ACC; width: 0%; height: 100%; transition: width 0.5s ease;"></div>
-    </div>
-  </section>
 
-  <section id="russian-word-widget" class="card" style="text-align: center; border-left: 5px solid #007ACC;">
-    <h2 style="font-size: 1rem; color: gray;">🇷🇺 Mot du jour</h2>
-    <div id="word-content">
-      <h1 id="word-russe" style="margin: 10px 0; font-size: 2rem; color: #333;">...</h1>
-      <p id="word-trad" style="font-style: italic; color: #007ACC; font-size: 1.2rem;">chargement...</p>
-    </div>
-  </section>
-  
-  <section id="todo">
-    <h2>Liste de tâches</h2>
-    <div class="input-group">
-      <input type="text" id="new-task" placeholder="Nouvelle tâche...">
-      <button id="add-task">Ajouter</button>
-    </div>
-    <ul id="task-list"></ul>
-  </section>
+      <div style="background: #eee; height: 12px; border-radius: 6px; overflow: hidden; width: 100%;">
+        <div id="widget-progress-bar" style="background: #007ACC; width: 0%; height: 100%; transition: width 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);"></div>
+      </div>
+    </section>
 
-  <section id="rss">
-    <div class="rss-header">
-      <h2>Flux RSS <button id="refresh-rss" title="Actualiser">🔄</button></h2>
-    </div>
+    <section id="russian-word-widget" class="card" style="text-align: center; border-left: 5px solid #007ACC;">
+      <h2 style="font-size: 1rem; color: gray;">🇷🇺 Mot du jour</h2>
+      <div id="word-content">
+        <h1 id="word-russe" style="margin: 10px 0; font-size: 2.2rem; color: #333;">...</h1>
+        <p id="word-trad" style="font-style: italic; color: #007ACC; font-size: 1.3rem;">chargement...</p>
+      </div>
+    </section>
+    
+    <section id="todo">
+      <h2>Liste de tâches</h2>
+      <div class="input-group">
+        <input type="text" id="new-task" placeholder="Nouvelle tâche...">
+        <button id="add-task">Ajouter</button>
+      </div>
+      <ul id="task-list"></ul>
+    </section>
 
-    <div id="rss-manage">
-      <input type="text" id="rss-name" placeholder="Nom (ex: Le Monde)">
-      <input type="text" id="rss-url" placeholder="URL du flux RSS">
-      <button id="add-rss">Ajouter la source</button>
-    </div>
+    <section id="rss">
+      <div class="rss-header">
+        <h2>Flux RSS <button id="refresh-rss" title="Actualiser">🔄</button></h2>
+      </div>
 
-    <div id="rss-sources-pills"></div>
-    <ul id="rss-list"></ul>
-  </section>
-</main>
+      <div id="rss-manage">
+        <input type="text" id="rss-name" placeholder="Nom (ex: Le Monde)">
+        <input type="text" id="rss-url" placeholder="URL du flux RSS">
+        <button id="add-rss">Ajouter la source</button>
+      </div>
 
-<script type="module" src="script.js"></script>
+      <div id="rss-sources-pills"></div>
+      <ul id="rss-list"></ul>
+    </section>
+  </main>
+
+  <script type="module" src="script.js"></script>
 </body>
 </html>
