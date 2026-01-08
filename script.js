@@ -17,6 +17,7 @@ onAuthStateChanged(auth, async (user) => {
     if (user) {
         console.log("Utilisateur connecté :", user.uid);
         await loadFromCloud();
+        updateFlashcardWidget(); // 🔥 FORCER recalcul après synchro
     } else {
         console.log("Mode Local actif");
         renderAll();
@@ -54,7 +55,17 @@ async function loadFromCloud() {
         if (snap.exists()) {
             const data = snap.data();
             if (data.tasks) localStorage.setItem("tasks", JSON.stringify(data.tasks));
-            if (data.rssFeeds) localStorage.setItem("rssFeeds", JSON.stringify(data.rssFeeds));
+            if (Array.isArray(data.rssFeeds) && data.rssFeeds.length > 0) {
+                localStorage.setItem("rssFeeds", JSON.stringify(data.rssFeeds));
+            } else {
+            // 🔁 fallback si cloud vide
+                if (!localStorage.getItem("rssFeeds")) {
+                    localStorage.setItem("rssFeeds", JSON.stringify([
+                        { name: "Le Monde", url: "https://www.lemonde.fr/rss/une.xml" }
+                    ]));
+                }
+            }
+
             if (data.flashcards) localStorage.setItem("flashcards", JSON.stringify(data.flashcards));
             if (data.revisionLog) localStorage.setItem("revisionLog", JSON.stringify(data.revisionLog));
             if (data.theme) localStorage.setItem("theme", data.theme);
@@ -247,6 +258,9 @@ document.addEventListener("DOMContentLoaded", () => {
     // Initialisation
     renderAll();
     fetchWeather();
+    
+    // 🔥 Forcer recalcul widget après chargement
+    updateFlashcardWidget();
 
     // Gestion du Thème
     const themeBtn = document.getElementById("toggle-theme");
