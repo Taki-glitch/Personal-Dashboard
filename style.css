@@ -188,3 +188,15 @@ body.dark input { background: #2a2a2a; color: white; border-color: #444; }
 body.dark .weather-hour { background: rgba(255,255,255,0.1); }
 body.dark li { border-bottom-color: #333; }
 body.dark #reviewCard { background: #2a2a2a; color: white; }
+
+/* Effet clignotement doux du soir */
+@keyframes pulse-red {
+  0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(231, 76, 60, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); }
+}
+
+.sprint-alert {
+  border: 2px solid #e74c3c !important;
+  animation: pulse-red 2s infinite;
+}
