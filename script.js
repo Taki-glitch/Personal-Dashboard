@@ -137,25 +137,48 @@ document.addEventListener("DOMContentLoaded", () => {
     /* --- FLASHCARD WIDGET --- */
     const updateFlashcardWidget = () => {
         const localData = localStorage.getItem("flashcards");
+        const logData = localStorage.getItem("revisionLog");
         const widgetCount = document.getElementById("widget-count");
-        
-        if (!widgetCount) return;
+        const progressBar = document.getElementById("widget-progress-bar");
+        const goalText = document.getElementById("widget-goal-text");
+    
+        if (!widgetCount || !progressBar) return;
 
-        if (!localData) {
-            widgetCount.textContent = "0 carte";
-            return;
+        // 1. Calcul des cartes restant à réviser
+        const today = new Date().toISOString().split("T")[0];
+        let countToReview = 0;
+        if (localData) {
+            const flashcards = JSON.parse(localData);
+            countToReview = flashcards.filter(c => c.nextReview <= today).length;
         }
 
-        const flashcards = JSON.parse(localData);
-        const today = new Date().toISOString().split("T")[0];
-        
-        // On compte les cartes dont la date de révision est passée ou égale à aujourd'hui
-        const count = flashcards.filter(c => c.nextReview <= today).length;
+        // 2. Calcul du progrès (Cartes déjà faites aujourd'hui)
+        let doneToday = 0;
+        const dailyGoal = 10; // Ton objectif quotidien
+        if (logData) {
+            const log = JSON.parse(logData);
+            if (log[today]) {
+                doneToday = log[today].revisited || 0;
+            }
+        }
 
-        if (count === 0) {
+        // 3. Mise à jour visuelle
+        if (countToReview === 0) {
             widgetCount.textContent = "✅ Tout est à jour !";
         } else {
-            widgetCount.textContent = `${count} carte${count > 1 ? 's' : ''} à réviser`;
+            widgetCount.textContent = `${countToReview} carte${countToReview > 1 ? 's' : ''} à réviser`;
+        }
+
+        // Calcul du pourcentage de la barre
+        const progressPercent = Math.min(100, Math.round((doneToday / dailyGoal) * 100));
+        progressBar.style.width = `${progressPercent}%`;
+        goalText.textContent = `Objectif : ${doneToday}/${dailyGoal} cartes`;
+    
+        // Changer la couleur si l'objectif est atteint
+        if (progressPercent >= 100) {
+            progressBar.style.backgroundColor = "#2ecc71"; // Vert
+        } else {
+            progressBar.style.backgroundColor = "#007ACC"; // Bleu
         }
     };
 
