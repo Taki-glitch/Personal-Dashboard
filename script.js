@@ -1,265 +1,263 @@
-/* ==== IMPORTS ==== */
-import { auth, logout } from './auth.js';
+/* ==== 1. IMPORTS & CONFIGURATION ==== */
+import { auth, db, logout } from "./auth.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { 
+    doc, 
+    getDoc, 
+    updateDoc 
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-/* ==== LOGIQUE D'AUTHENTIFICATION ==== */
-onAuthStateChanged(auth, (user) => {
-    const userStatus = document.getElementById("user-status");
-    const userInfo = document.getElementById("user-info");
-    const userGuest = document.getElementById("user-guest");
-    const userName = document.getElementById("user-name");
-    const logoutBtn = document.getElementById("btn-logout");
+let currentUser = null;
 
-    if (!userStatus || !userInfo || !userGuest) return;
-    	
+/* ==== 2. AUTHENTIFICATION & SYNCHRONISATION ==== */
+onAuthStateChanged(auth, async (user) => {
+    currentUser = user || null;
+    updateUserUI(user);
+
     if (user) {
-        userStatus.style.display = "none";
-        userGuest.style.display = "none";
-        userInfo.style.display = "block";
-        userName.textContent = user.displayName || user.email;
-        
-        // On configure le clic seulement si le bouton est là
-        if (logoutBtn) logoutBtn.onclick = () => logout();
-        
-        console.log("Connecté :", user.uid);
+        console.log("Utilisateur connecté :", user.uid);
+        await loadFromCloud();
     } else {
-        userStatus.textContent = "Mode Local";
-        userStatus.style.display = "block";
-        userGuest.style.display = "block";
-        userInfo.style.display = "none";
+        console.log("Mode Local actif");
+        // En mode local, on rafraîchit quand même l'UI avec le localStorage actuel
+        renderAll();
     }
 });
 
-document.addEventListener("DOMContentLoaded", () => {
-    /* --- THÈME --- */
-    const toggleThemeBtn = document.getElementById("toggle-theme");
-    const applyTheme = (theme) => {
-        document.body.classList.toggle("dark", theme === "dark");
-        if(toggleThemeBtn) toggleThemeBtn.textContent = theme === "dark" ? "☀️" : "🌙";
-    };
+function updateUserUI(user) {
+    const status = document.getElementById("user-status");
+    const info = document.getElementById("user-info");
+    const guest = document.getElementById("user-guest");
+    const name = document.getElementById("user-name");
+    const logoutBtn = document.getElementById("btn-logout");
 
-    let currentTheme = localStorage.getItem("theme") || "light";
-    applyTheme(currentTheme);
+    if (!status) return;
 
-    if(toggleThemeBtn) {
-        toggleThemeBtn.onclick = () => {
-            currentTheme = currentTheme === "light" ? "dark" : "light";
-            localStorage.setItem("theme", currentTheme);
-            applyTheme(currentTheme);
-        };
+    if (user) {
+        status.style.display = "none";
+        guest.style.display = "none";
+        info.style.display = "block";
+        name.textContent = user.displayName || user.email;
+        if (logoutBtn) logoutBtn.onclick = () => logout();
+    } else {
+        status.textContent = "Mode Local";
+        status.style.display = "block";
+        guest.style.display = "block";
+        info.style.display = "none";
     }
+}
 
-    /* --- TODO LIST --- */
-    const taskList = document.getElementById("task-list");
-    const newTaskInput = document.getElementById("new-task");
-    const addTaskBtn = document.getElementById("add-task");
+async function loadFromCloud() {
+    try {
+        const ref = doc(db, "users", currentUser.uid);
+        const snap = await getDoc(ref);
 
-    const renderTasks = () => {
-        const tasks = JSON.parse(localStorage.getItem("tasks") || "[]");
-        if(taskList) {
-            taskList.innerHTML = tasks.map((t, i) => `
-                <li>
-                    <span>${t}</span>
-                    <button onclick="removeTask(${i})" style="background:none; color:red; width:auto;">✕</button>
-                </li>
-            `).join("");
+        if (snap.exists()) {
+            const data = snap.data();
+            // On synchronise le cloud vers le local storage
+            if (data.tasks) localStorage.setItem("tasks", JSON.stringify(data.tasks));
+            if (data.rssFeeds) localStorage.setItem("rssFeeds", JSON.stringify(data.rssFeeds));
+            if (data.flashcards) localStorage.setItem("flashcards", JSON.stringify(data.flashcards));
+            if (data.revisionLog) localStorage.setItem("revisionLog", JSON.stringify(data.revisionLog));
+            if (data.theme) localStorage.setItem("theme", data.theme);
+            
+            renderAll();
         }
-    };
-
-    // On attache la fonction à window pour qu'elle soit visible depuis le HTML (onclick)
-    window.removeTask = (index) => {
-        const tasks = JSON.parse(localStorage.getItem("tasks") || "[]");
-        tasks.splice(index, 1);
-        localStorage.setItem("tasks", JSON.stringify(tasks));
-        renderTasks();
-    };
-
-    if(addTaskBtn) {
-        addTaskBtn.onclick = () => {
-            const text = newTaskInput.value.trim();
-            if (!text) return;
-            const tasks = JSON.parse(localStorage.getItem("tasks") || "[]");
-            tasks.push(text);
-            localStorage.setItem("tasks", JSON.stringify(tasks));
-            newTaskInput.value = "";
-            renderTasks();
-        };
+    } catch (error) {
+        console.error("Erreur de chargement Cloud :", error);
     }
+}
 
-    /* --- MÉTÉO --- */
-    const fetchWeather = () => {
-        const url = "https://api.openweathermap.org/data/2.5/forecast?q=Nantes,FR&units=metric&lang=fr&appid=da91d5662517021a00fcf43c95937071";
-        fetch(url)
-            .then(r => r.json())
-            .then(data => {
-                const now = new Date().toISOString().split("T")[0];
-                const tomorrow = new Date(Date.now() + 86400000).toISOString().split("T")[0];
-
-                const buildHtml = (dateStr) => data.list
-                    .filter(i => i.dt_txt.startsWith(dateStr))
-                    .slice(0, 5)
-                    .map(i => `
-                        <div class="weather-hour">
-                            <div>${i.dt_txt.slice(11,16)}</div>
-                            <img src="https://openweathermap.org/img/wn/${i.weather[0].icon}.png">
-                            <strong>${Math.round(i.main.temp)}°C</strong>
-                        </div>`).join("");
-
-                const todayEl = document.getElementById("weather-today");
-                const tomorrowEl = document.getElementById("weather-tomorrow");
-                if(todayEl) todayEl.innerHTML = buildHtml(now);
-                if(tomorrowEl) tomorrowEl.innerHTML = buildHtml(tomorrow);
-            }).catch(() => console.log("Erreur Météo"));
-    };
-
-    /* --- RSS DYNAMIQUE --- */
-    const rssList = document.getElementById("rss-list");
-    const rssPills = document.getElementById("rss-sources-pills");
-    const addRssBtn = document.getElementById("add-rss");
-
-    let myFeeds = JSON.parse(localStorage.getItem("rssFeeds")) || [
-        { name: "Le Monde", url: "https://www.lemonde.fr/rss/une.xml" },
-        { name: "France Info", url: "https://www.francetvinfo.fr/titres.rss" }
-    ];
-
-    const loadRSS = () => {
-        if(!rssList) return;
-        rssList.innerHTML = "<p>Chargement...</p>";
-        if(rssPills) {
-            rssPills.innerHTML = myFeeds.map((f, i) => `
-                <span class="pill">${f.name} <button onclick="removeFeed(${i})">✕</button></span>
-            `).join("");
-        }
-
-        const readArticles = JSON.parse(localStorage.getItem("readArticles") || "[]");
-        rssList.innerHTML = "";
-
-        myFeeds.forEach(feed => {
-            fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feed.url)}`)
-                .then(r => r.json())
-                .then(data => {
-                    if (data.status === 'ok') {
-                        data.items.slice(0, 3).forEach(item => {
-                            const li = document.createElement("li");
-                            li.className = "rss-item" + (readArticles.includes(item.link) ? " read" : "");
-                            li.innerHTML = `
-                                <a href="${item.link}" target="_blank">
-                                    <div><strong>${item.title}</strong></div>
-                                    <div class="rss-meta">${feed.name}</div>
-                                </a>`;
-                            li.onclick = () => {
-                                if(!readArticles.includes(item.link)) {
-                                    readArticles.push(item.link);
-                                    localStorage.setItem("readArticles", JSON.stringify(readArticles));
-                                    li.classList.add("read");
-                                }
-                            };
-                            rssList.appendChild(li);
-                        });
-                    }
-                });
-        });
-    };
-
-    window.removeFeed = (index) => {
-        myFeeds.splice(index, 1);
-        localStorage.setItem("rssFeeds", JSON.stringify(myFeeds));
-        loadRSS();
-    };
-
-    if(addRssBtn) {
-        addRssBtn.onclick = () => {
-            const name = document.getElementById("rss-name").value.trim();
-            const url = document.getElementById("rss-url").value.trim();
-            if (name && url) {
-                myFeeds.push({ name, url });
-                localStorage.setItem("rssFeeds", JSON.stringify(myFeeds));
-                loadRSS();
-            }
-        };
+async function saveToCloud(field, value) {
+    if (!currentUser) return; // On ne sauvegarde pas si on est en mode local
+    try {
+        const ref = doc(db, "users", currentUser.uid);
+        await updateDoc(ref, { [field]: value });
+    } catch (error) {
+        console.error("Erreur de sauvegarde Cloud :", error);
     }
+}
 
-    /* --- FLASHCARD WIDGET --- */
-    const updateFlashcardWidget = () => {
-        const localData = localStorage.getItem("flashcards");
-        const logData = localStorage.getItem("revisionLog");
-        const widget = document.getElementById("flashcard-widget");
-        const widgetCount = document.getElementById("widget-count");
-        
-        if (!widgetCount) return;
-
-        const today = new Date().toISOString().split("T")[0];
-        const now = new Date();
-
-        let countToReview = 0;
-        let flashcards = [];
-        if (localData) {
-            flashcards = JSON.parse(localData);
-            countToReview = flashcards.filter(c => c.nextReview <= today).length;
-        }
-
-        let doneToday = 0;
-        let timeSpent = 0;
-        const dailyGoal = 10; 
-
-        if (logData) {
-            const log = JSON.parse(logData);
-            if (log[today]) {
-                doneToday = (log[today].success || 0) + (log[today].fail || 0);
-                timeSpent = log[today].timeSeconds || 0; 
-            }
-        }
-
-        // Mise à jour visuelle (Chrono, Barre de progrès...)
-        const timerDisplay = document.getElementById("sprint-timer");
-        if (timerDisplay) {
-            const mins = Math.floor(timeSpent / 60).toString().padStart(2, '0');
-            const secs = (timeSpent % 60).toString().padStart(2, '0');
-            timerDisplay.textContent = `⏱️ ${mins}:${secs}`;
-        }
-
-        if (widget && now.getHours() >= 18 && doneToday < dailyGoal) {
-            widget.classList.add("sprint-alert");
-        } else if(widget) {
-            widget.classList.remove("sprint-alert");
-        }
-
-        widgetCount.textContent = countToReview === 0 ? "✅ Tout est à jour !" : `${countToReview} carte${countToReview > 1 ? 's' : ''} à réviser`;
-        
-        const progressBar = document.getElementById("widget-progress-bar");
-        if (progressBar) {
-            const progressPercent = Math.min(100, Math.round((doneToday / dailyGoal) * 100));
-            progressBar.style.width = `${progressPercent}%`;
-            progressBar.style.backgroundColor = progressPercent >= 100 ? "#2ecc71" : "#007ACC";
-        }
-    };
-
-    /* ==== INITIALISATION ==== */
+/* ==== 3. FONCTIONS DE RENDU GLOBAL ==== */
+function renderAll() {
     renderTasks();
-    fetchWeather();
     loadRSS();
     updateFlashcardWidget();
-    
-    const refreshRss = document.getElementById("refresh-rss");
-    if(refreshRss) refreshRss.onclick = loadRSS;
-    
-    const menuBtn = document.getElementById("menu-btn");
-    const sideMenu = document.getElementById("side-menu");
-    const closeMenu = document.getElementById("close-menu");
-    const overlay = document.getElementById("overlay");
+    const theme = localStorage.getItem("theme") || "light";
+    applyTheme(theme);
+}
 
-    if(menuBtn) {
-        menuBtn.addEventListener("click", () => {
-            sideMenu.classList.add("open");
-            overlay.classList.add("show");
-        });
+/* ==== 4. MODULES DE L'APPLICATION ==== */
+
+// --- THÈME ---
+function applyTheme(theme) {
+    const toggleThemeBtn = document.getElementById("toggle-theme");
+    document.body.classList.toggle("dark", theme === "dark");
+    if (toggleThemeBtn) toggleThemeBtn.textContent = theme === "dark" ? "☀️" : "🌙";
+}
+
+// --- TODO LIST ---
+function renderTasks() {
+    const taskList = document.getElementById("task-list");
+    if (!taskList) return;
+    const tasks = JSON.parse(localStorage.getItem("tasks") || "[]");
+    taskList.innerHTML = tasks.map((t, i) => `
+        <li>
+            <span>${t}</span>
+            <button onclick="removeTask(${i})" style="background:none; color:red; width:auto;">✕</button>
+        </li>
+    `).join("");
+}
+
+window.removeTask = async (index) => {
+    const tasks = JSON.parse(localStorage.getItem("tasks") || "[]");
+    tasks.splice(index, 1);
+    localStorage.setItem("tasks", JSON.stringify(tasks));
+    renderTasks();
+    await saveToCloud("tasks", tasks);
+};
+
+// --- MÉTÉO ---
+const fetchWeather = () => {
+    const url = "https://api.openweathermap.org/data/2.5/forecast?q=Nantes,FR&units=metric&lang=fr&appid=da91d5662517021a00fcf43c95937071";
+    fetch(url)
+        .then(r => r.json())
+        .then(data => {
+            const now = new Date().toISOString().split("T")[0];
+            const tomorrow = new Date(Date.now() + 86400000).toISOString().split("T")[0];
+            const buildHtml = (dateStr) => data.list
+                .filter(i => i.dt_txt.startsWith(dateStr)).slice(0, 5)
+                .map(i => `
+                    <div class="weather-hour">
+                        <div>${i.dt_txt.slice(11,16)}</div>
+                        <img src="https://openweathermap.org/img/wn/${i.weather[0].icon}.png">
+                        <strong>${Math.round(i.main.temp)}°C</strong>
+                    </div>`).join("");
+            document.getElementById("weather-today").innerHTML = buildHtml(now);
+            document.getElementById("weather-tomorrow").innerHTML = buildHtml(tomorrow);
+        }).catch(() => console.log("Erreur Météo"));
+};
+
+// --- RSS ---
+function loadRSS() {
+    const rssList = document.getElementById("rss-list");
+    const rssPills = document.getElementById("rss-sources-pills");
+    if (!rssList) return;
+
+    let feeds = JSON.parse(localStorage.getItem("rssFeeds")) || [
+        { name: "Le Monde", url: "https://www.lemonde.fr/rss/une.xml" }
+    ];
+
+    if (rssPills) {
+        rssPills.innerHTML = feeds.map((f, i) => `
+            <span class="pill">${f.name} <button onclick="removeFeed(${i})">✕</button></span>
+        `).join("");
     }
 
-    const closeMenuFn = () => {
-        sideMenu.classList.remove("open");
-        overlay.classList.remove("show");
+    const readArticles = JSON.parse(localStorage.getItem("readArticles") || "[]");
+    rssList.innerHTML = "";
+
+    feeds.forEach(feed => {
+        fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feed.url)}`)
+            .then(r => r.json())
+            .then(data => {
+                if (data.status === 'ok') {
+                    data.items.slice(0, 3).forEach(item => {
+                        const li = document.createElement("li");
+                        li.className = "rss-item" + (readArticles.includes(item.link) ? " read" : "");
+                        li.innerHTML = `<a href="${item.link}" target="_blank"><strong>${item.title}</strong><br><small>${feed.name}</small></a>`;
+                        li.onclick = () => {
+                            if(!readArticles.includes(item.link)) {
+                                readArticles.push(item.link);
+                                localStorage.setItem("readArticles", JSON.stringify(readArticles));
+                                li.classList.add("read");
+                            }
+                        };
+                        rssList.appendChild(li);
+                    });
+                }
+            });
+    });
+}
+
+window.removeFeed = async (index) => {
+    let feeds = JSON.parse(localStorage.getItem("rssFeeds") || "[]");
+    feeds.splice(index, 1);
+    localStorage.setItem("rssFeeds", JSON.stringify(feeds));
+    loadRSS();
+    await saveToCloud("rssFeeds", feeds);
+};
+
+// --- FLASHCARD WIDGET ---
+function updateFlashcardWidget() {
+    const widgetCount = document.getElementById("widget-count");
+    if (!widgetCount) return;
+
+    const flashcards = JSON.parse(localStorage.getItem("flashcards") || "[]");
+    const logData = JSON.parse(localStorage.getItem("revisionLog") || "{}");
+    const today = new Date().toISOString().split("T")[0];
+
+    const countToReview = flashcards.filter(c => c.nextReview <= today).length;
+    widgetCount.textContent = countToReview === 0 ? "✅ Tout est à jour !" : `${countToReview} carte${countToReview > 1 ? 's' : ''} à réviser`;
+
+    let doneToday = logData[today] ? (logData[today].success || 0) + (logData[today].fail || 0) : 0;
+    const progressPercent = Math.min(100, Math.round((doneToday / 10) * 100));
+    const progressBar = document.getElementById("widget-progress-bar");
+    if (progressBar) progressBar.style.width = `${progressPercent}%`;
+}
+
+/* ==== 5. INITIALISATION DES ÉVÉNEMENTS (DOM) ==== */
+document.addEventListener("DOMContentLoaded", () => {
+    renderAll();
+    fetchWeather();
+
+    // Thème
+    document.getElementById("toggle-theme").onclick = async () => {
+        let theme = localStorage.getItem("theme") === "light" ? "dark" : "light";
+        localStorage.setItem("theme", theme);
+        applyTheme(theme);
+        await saveToCloud("theme", theme);
     };
 
-    if(closeMenu) closeMenu.addEventListener("click", closeMenuFn);
-    if(overlay) overlay.addEventListener("click", closeMenuFn);
+    // Ajout Tâche
+    document.getElementById("add-task").onclick = async () => {
+        const input = document.getElementById("new-task");
+        const text = input.value.trim();
+        if (!text) return;
+        const tasks = JSON.parse(localStorage.getItem("tasks") || "[]");
+        tasks.push(text);
+        localStorage.setItem("tasks", JSON.stringify(tasks));
+        input.value = "";
+        renderTasks();
+        await saveToCloud("tasks", tasks);
+    };
+
+    // Ajout RSS
+    document.getElementById("add-rss")?.addEventListener("click", async () => {
+        const name = document.getElementById("rss-name").value.trim();
+        const url = document.getElementById("rss-url").value.trim();
+        if (!name || !url) return;
+        let feeds = JSON.parse(localStorage.getItem("rssFeeds") || "[]");
+        feeds.push({ name, url });
+        localStorage.setItem("rssFeeds", JSON.stringify(feeds));
+        loadRSS();
+        await saveToCloud("rssFeeds", feeds);
+    });
+
+    // Menu & Overlay
+    const menuBtn = document.getElementById("menu-btn");
+    const sideMenu = document.getElementById("side-menu");
+    const overlay = document.getElementById("overlay");
+    const closeMenu = document.getElementById("close-menu");
+
+    if (menuBtn) menuBtn.onclick = () => { 
+        sideMenu.classList.add("open"); 
+        overlay.classList.add("show"); 
+    };
+    const closeFn = () => { 
+        sideMenu.classList.remove("open"); 
+        overlay.classList.remove("show"); 
+    };
+    if (closeMenu) closeMenu.onclick = closeFn;
+    if (overlay) overlay.onclick = closeFn;
 });
