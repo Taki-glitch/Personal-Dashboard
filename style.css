@@ -158,6 +158,11 @@ li {
 /* ===== ZONE DE RÉVISION (Design Premium) ===== */
 .card h2 { margin-top: 0; font-size: 18px; margin-bottom: 15px; border-left: 4px solid #007ACC; padding-left: 10px; }
 
+canvas#progressChart {
+    max-height: 250px !important;
+    width: 100% !important;
+}
+
 #reviewCard {
     background: #e8f1fa; padding: 25px; border-radius: 12px;
     margin-bottom: 20px; text-align: center; font-size: 18px;
