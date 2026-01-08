@@ -88,6 +88,14 @@ async function ensureUserDoc() {
     const localFlashcards = JSON.parse(localStorage.getItem("flashcards") || "[]");
     const localLog = JSON.parse(localStorage.getItem("revisionLog") || "{}");
 
+    // 🔥 LOGIQUE DE FLUX PAR DÉFAUT
+    // Si l'utilisateur n'a pas de flux en local, on lui met Le Monde par défaut
+    const defaultRSS = [
+      { name: "Le Monde", url: "https://www.lemonde.fr/rss/une.xml" }
+    ];
+    
+    const finalRSS = localRSS.length > 0 ? localRSS : defaultRSS;
+
     // CRÉATION DU DOCUMENT AVEC LES DONNÉES LOCALES
     await setDoc(ref, {
       tasks: localTasks,
