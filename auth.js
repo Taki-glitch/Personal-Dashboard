@@ -1,14 +1,19 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { 
-    getAuth, 
-    GoogleAuthProvider, 
-    signInWithPopup, 
-    signInWithEmailAndPassword, 
-    createUserWithEmailAndPassword, 
-    signOut, 
-    onAuthStateChanged 
+import {
+  getAuth,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  setDoc
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBNgBcya0G9Yc4t1uK1U4yzuR0R0gF-EpY",
@@ -20,43 +25,61 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+export const auth = getAuth(app);
+export const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
-// --- FONCTION GOOGLE ---
-export async function loginWithGoogle() {
-    try {
-        await signInWithPopup(auth, provider);
-        window.location.href = 'index.html'; 
-    } catch (error) {
-        alert("Erreur Google : " + error.message);
-    }
-}
+/* ========= AUTH ========= */
 
-// --- FONCTIONS EMAIL / MOT DE PASSE ---
-export async function registerEmail(email, password) {
-    try {
-        await createUserWithEmailAndPassword(auth, email, password);
-        window.location.href = 'index.html';
-    } catch (error) {
-        alert("Erreur d'inscription : " + error.message);
-    }
+export async function loginWithGoogle() {
+  try {
+    await signInWithPopup(auth, provider);
+    await ensureUserDoc();
+    window.location.href = "index.html";
+  } catch (e) {
+    alert("Erreur Google : " + e.message);
+  }
 }
 
 export async function loginEmail(email, password) {
-    try {
-        await signInWithEmailAndPassword(auth, email, password);
-        window.location.href = 'index.html';
-    } catch (error) {
-        alert("Identifiants incorrects : " + error.message);
-    }
+  try {
+    await signInWithEmailAndPassword(auth, email, password);
+    // Pas besoin de ensureUserDoc ici si on part du principe 
+    // que le compte existe déjà, mais le laisser ne fait pas de mal.
+    window.location.href = "index.html";
+  } catch (e) {
+    alert("Erreur connexion : " + e.message);
+  }
 }
 
-export function logout() {
-    signOut(auth).then(() => {
-        window.location.href = 'login.html';
+export async function registerEmail(email, password) {
+  try {
+    await createUserWithEmailAndPassword(auth, email, password);
+    await ensureUserDoc();
+    window.location.href = "index.html";
+  } catch (e) {
+    alert("Erreur inscription : " + e.message);
+  }
+}
+
+
+/* ========= FIRESTORE INIT ========= */
+
+async function ensureUserDoc() {
+  const user = auth.currentUser;
+  if (!user) return;
+
+  const ref = doc(db, "users", user.uid);
+  const snap = await getDoc(ref);
+
+  if (!snap.exists()) {
+    await setDoc(ref, {
+      tasks: [],
+      rssFeeds: [],
+      flashcards: [],
+      revisionLog: {},
+      theme: "light",
+      createdAt: new Date()
     });
+  }
 }
-
-export { auth, db };
