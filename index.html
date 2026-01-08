@@ -10,19 +10,28 @@
   
 <button id="toggle-theme" aria-label="Changer le thème">🌙</button>
 
-<!-- Bouton menu -->
 <button id="menu-btn" aria-label="Ouvrir le menu">☰</button>
 
-<!-- Menu latéral -->
 <nav id="side-menu">
   <button id="close-menu" aria-label="Fermer le menu">✕</button>
+
+  <div id="user-profile" style="padding: 20px; border-bottom: 1px solid #eee; text-align: center;">
+      <p id="user-status" style="font-size: 0.9rem; color: gray; margin-bottom: 10px;">Chargement...</p>
+      <div id="user-info" style="display: none;">
+          <strong id="user-name" style="display: block; margin-bottom: 10px; font-size: 1rem; color: #333;">Utilisateur</strong>
+          <button id="btn-logout" style="background: none; border: 1px solid #e74c3c; color: #e74c3c; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 0.8rem; width: 100%;">Déconnexion</button>
+      </div>
+      <div id="user-guest" style="display: none;">
+          <a href="login.html" class="btn-primary" style="text-decoration: none; font-size: 0.8rem; padding: 8px 12px; display: block;">Se connecter</a>
+      </div>
+  </div>
+
   <ul>
     <li><a href="index.html" class="active">📊 Dashboard</a></li>
     <li><a href="flashcards.html" class="active">🧠 Flashcards</a></li>
   </ul>
 </nav>
 
-<!-- Overlay (fond sombre) -->
 <div id="overlay"></div>
 
 <header>
@@ -90,6 +99,6 @@
   </section>
 </main>
 
-<script src="script.js"></script>
+<script type="module" src="script.js"></script>
 </body>
 </html>
