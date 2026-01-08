@@ -178,10 +178,16 @@ function loadRSS() {
     const rssPills = document.getElementById("rss-sources-pills");
     if (!rssList) return;
 
-    let feeds = JSON.parse(localStorage.getItem("rssFeeds")) || [
-        { name: "Le Monde", url: "https://www.lemonde.fr/rss/une.xml" }
-    ];
+    // On récupère les flux. Si vide ET qu'on n'est pas sur le cloud, on met Le Monde
+    let feeds = JSON.parse(localStorage.getItem("rssFeeds") || "[]");
+    
+    if (feeds.length === 0) {
+        // Optionnel : ne mettre Le Monde par défaut que si l'utilisateur n'a jamais rien configuré
+        feeds = [{ name: "Le Monde", url: "https://www.lemonde.fr/rss/une.xml" }];
+        localStorage.setItem("rssFeeds", JSON.stringify(feeds));
+    }
 
+    // Affichage des badges (pills)
     if (rssPills) {
         rssPills.innerHTML = feeds.map((f, i) => `
             <span class="pill">${f.name} <button onclick="removeFeed(${i})">✕</button></span>
@@ -189,9 +195,10 @@ function loadRSS() {
     }
 
     const readArticles = JSON.parse(localStorage.getItem("readArticles") || "[]");
-    rssList.innerHTML = "";
+    rssList.innerHTML = ""; // On vide avant de remplir
 
     feeds.forEach(feed => {
+        // Utilisation de l'API rss2json pour contourner les problèmes de CORS
         fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feed.url)}`)
             .then(r => r.json())
             .then(data => {
@@ -199,7 +206,12 @@ function loadRSS() {
                     data.items.slice(0, 3).forEach(item => {
                         const li = document.createElement("li");
                         li.className = "rss-item" + (readArticles.includes(item.link) ? " read" : "");
-                        li.innerHTML = `<a href="${item.link}" target="_blank"><strong>${item.title}</strong><br><small>${feed.name}</small></a>`;
+                        li.innerHTML = `
+                            <a href="${item.link}" target="_blank">
+                                <strong>${item.title}</strong><br>
+                                <small>${feed.name} — ${new Date(item.pubDate).toLocaleDateString()}</small>
+                            </a>`;
+                        
                         li.onclick = () => {
                             if(!readArticles.includes(item.link)) {
                                 readArticles.push(item.link);
@@ -210,7 +222,8 @@ function loadRSS() {
                         rssList.appendChild(li);
                     });
                 }
-            });
+            })
+            .catch(err => console.error("Erreur flux " + feed.name, err));
     });
 }
 
