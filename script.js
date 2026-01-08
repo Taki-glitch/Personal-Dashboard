@@ -1,5 +1,6 @@
 /* ==== 1. IMPORTS & CONFIGURATION ==== */
-import { auth, db, logout } from "./auth.js";
+// Note : Assurez-vous que logout est bien exporté dans auth.js
+import { auth, db, logout } from "./auth.js"; 
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { 
     doc, 
@@ -19,7 +20,6 @@ onAuthStateChanged(auth, async (user) => {
         await loadFromCloud();
     } else {
         console.log("Mode Local actif");
-        // En mode local, on rafraîchit quand même l'UI avec le localStorage actuel
         renderAll();
     }
 });
@@ -37,7 +37,7 @@ function updateUserUI(user) {
         status.style.display = "none";
         guest.style.display = "none";
         info.style.display = "block";
-        name.textContent = user.displayName || user.email;
+        if (name) name.textContent = user.displayName || user.email;
         if (logoutBtn) logoutBtn.onclick = () => logout();
     } else {
         status.textContent = "Mode Local";
@@ -54,7 +54,6 @@ async function loadFromCloud() {
 
         if (snap.exists()) {
             const data = snap.data();
-            // On synchronise le cloud vers le local storage
             if (data.tasks) localStorage.setItem("tasks", JSON.stringify(data.tasks));
             if (data.rssFeeds) localStorage.setItem("rssFeeds", JSON.stringify(data.rssFeeds));
             if (data.flashcards) localStorage.setItem("flashcards", JSON.stringify(data.flashcards));
@@ -69,7 +68,7 @@ async function loadFromCloud() {
 }
 
 async function saveToCloud(field, value) {
-    if (!currentUser) return; // On ne sauvegarde pas si on est en mode local
+    if (!currentUser) return; 
     try {
         const ref = doc(db, "users", currentUser.uid);
         await updateDoc(ref, { [field]: value });
@@ -104,7 +103,7 @@ function renderTasks() {
     taskList.innerHTML = tasks.map((t, i) => `
         <li>
             <span>${t}</span>
-            <button onclick="removeTask(${i})" style="background:none; color:red; width:auto;">✕</button>
+            <button onclick="removeTask(${i})" style="background:none; color:red; width:auto; border:none; cursor:pointer;">✕</button>
         </li>
     `).join("");
 }
@@ -123,6 +122,7 @@ const fetchWeather = () => {
     fetch(url)
         .then(r => r.json())
         .then(data => {
+            if (!data.list) return;
             const now = new Date().toISOString().split("T")[0];
             const tomorrow = new Date(Date.now() + 86400000).toISOString().split("T")[0];
             const buildHtml = (dateStr) => data.list
@@ -133,8 +133,11 @@ const fetchWeather = () => {
                         <img src="https://openweathermap.org/img/wn/${i.weather[0].icon}.png">
                         <strong>${Math.round(i.main.temp)}°C</strong>
                     </div>`).join("");
-            document.getElementById("weather-today").innerHTML = buildHtml(now);
-            document.getElementById("weather-tomorrow").innerHTML = buildHtml(tomorrow);
+            
+            const todayEl = document.getElementById("weather-today");
+            const tomorrowEl = document.getElementById("weather-tomorrow");
+            if (todayEl) todayEl.innerHTML = buildHtml(now);
+            if (tomorrowEl) tomorrowEl.innerHTML = buildHtml(tomorrow);
         }).catch(() => console.log("Erreur Météo"));
 };
 
@@ -208,41 +211,58 @@ function updateFlashcardWidget() {
 
 /* ==== 5. INITIALISATION DES ÉVÉNEMENTS (DOM) ==== */
 document.addEventListener("DOMContentLoaded", () => {
+    // Initialisation
     renderAll();
     fetchWeather();
 
-    // Thème
-    document.getElementById("toggle-theme").onclick = async () => {
-        let theme = localStorage.getItem("theme") === "light" ? "dark" : "light";
-        localStorage.setItem("theme", theme);
-        applyTheme(theme);
-        await saveToCloud("theme", theme);
-    };
+    // Gestion du Thème
+    const themeBtn = document.getElementById("toggle-theme");
+    if (themeBtn) {
+        themeBtn.onclick = async () => {
+            let theme = localStorage.getItem("theme") === "light" ? "dark" : "light";
+            localStorage.setItem("theme", theme);
+            applyTheme(theme);
+            await saveToCloud("theme", theme);
+        };
+    }
 
     // Ajout Tâche
-    document.getElementById("add-task").onclick = async () => {
-        const input = document.getElementById("new-task");
-        const text = input.value.trim();
-        if (!text) return;
-        const tasks = JSON.parse(localStorage.getItem("tasks") || "[]");
-        tasks.push(text);
-        localStorage.setItem("tasks", JSON.stringify(tasks));
-        input.value = "";
-        renderTasks();
-        await saveToCloud("tasks", tasks);
-    };
+    const addTaskBtn = document.getElementById("add-task");
+    if (addTaskBtn) {
+        addTaskBtn.onclick = async () => {
+            const input = document.getElementById("new-task");
+            const text = input.value.trim();
+            if (!text) return;
+            const tasks = JSON.parse(localStorage.getItem("tasks") || "[]");
+            tasks.push(text);
+            localStorage.setItem("tasks", JSON.stringify(tasks));
+            input.value = "";
+            renderTasks();
+            await saveToCloud("tasks", tasks);
+        };
+    }
 
     // Ajout RSS
-    document.getElementById("add-rss")?.addEventListener("click", async () => {
-        const name = document.getElementById("rss-name").value.trim();
-        const url = document.getElementById("rss-url").value.trim();
-        if (!name || !url) return;
-        let feeds = JSON.parse(localStorage.getItem("rssFeeds") || "[]");
-        feeds.push({ name, url });
-        localStorage.setItem("rssFeeds", JSON.stringify(feeds));
-        loadRSS();
-        await saveToCloud("rssFeeds", feeds);
-    });
+    const addRssBtn = document.getElementById("add-rss");
+    if (addRssBtn) {
+        addRssBtn.addEventListener("click", async () => {
+            const nameEl = document.getElementById("rss-name");
+            const urlEl = document.getElementById("rss-url");
+            if (!nameEl || !urlEl) return;
+            
+            const name = nameEl.value.trim();
+            const url = urlEl.value.trim();
+            if (!name || !url) return;
+            
+            let feeds = JSON.parse(localStorage.getItem("rssFeeds") || "[]");
+            feeds.push({ name, url });
+            localStorage.setItem("rssFeeds", JSON.stringify(feeds));
+            nameEl.value = "";
+            urlEl.value = "";
+            loadRSS();
+            await saveToCloud("rssFeeds", feeds);
+        });
+    }
 
     // Menu & Overlay
     const menuBtn = document.getElementById("menu-btn");
@@ -250,14 +270,16 @@ document.addEventListener("DOMContentLoaded", () => {
     const overlay = document.getElementById("overlay");
     const closeMenu = document.getElementById("close-menu");
 
-    if (menuBtn) menuBtn.onclick = () => { 
-        sideMenu.classList.add("open"); 
-        overlay.classList.add("show"); 
-    };
-    const closeFn = () => { 
-        sideMenu.classList.remove("open"); 
-        overlay.classList.remove("show"); 
-    };
-    if (closeMenu) closeMenu.onclick = closeFn;
-    if (overlay) overlay.onclick = closeFn;
+    if (menuBtn && sideMenu && overlay) {
+        menuBtn.onclick = () => { 
+            sideMenu.classList.add("open"); 
+            overlay.classList.add("show"); 
+        };
+        const closeFn = () => { 
+            sideMenu.classList.remove("open"); 
+            overlay.classList.remove("show"); 
+        };
+        if (closeMenu) closeMenu.onclick = closeFn;
+        overlay.onclick = closeFn;
+    }
 });
