@@ -124,14 +124,20 @@ function applyGrade(card, grade) {
     INTERFACE DE RÉVISION
 ===================================== */
 function startReviewSession() {
-    const tag = document.getElementById("tagFilter").value;
-    const lang = document.getElementById("langFilter")?.value || "all";
+    // 1. On récupère les filtres CHOISIS par l'utilisateur pour la révision
+    const selectedTag = document.getElementById("tagFilter").value;
+    const selectedLang = document.getElementById("langFilter")?.value || "all";
+    
     const today = todayISO();
     startTime = Date.now();
-    
-    reviewPack = flashcards.filter(c => c.nextReview <= today);
-    if (tag !== "all") reviewPack = reviewPack.filter(c => c.tags.includes(tag));
-    if (lang !== "all") reviewPack = reviewPack.filter(c => c.language === lang);
+
+    // 2. Filtrage intelligent
+    reviewPack = flashcards.filter(c => {
+        const isDue = c.nextReview <= today;
+        const matchTag = (selectedTag === "all" || c.tags.includes(selectedTag));
+        const matchLang = (selectedLang === "all" || c.language === selectedLang);
+        return isDue && matchTag && matchLang;
+    });
 
     currentIndex = 0;
     if (reviewPack.length === 0) {
@@ -226,24 +232,32 @@ function displayFlashcards() {
 function updateFilters() {
     const tagSelect = document.getElementById("tagFilter");
     const langSelect = document.getElementById("langFilter");
+    const dataList = document.getElementById("existingLangs");
     
     const tagsSet = new Set();
     const langsSet = new Set();
+    
     flashcards.forEach(c => {
-        c.tags.forEach(t => tagsSet.add(t));
-        if(c.language) langsSet.add(c.language);
+        if (c.tags) c.tags.forEach(t => tagsSet.add(t));
+        if (c.language) langsSet.add(c.language);
     });
 
-    const currentTag = tagSelect.value;
-    tagSelect.innerHTML = '<option value="all">Tous les tags</option>';
-    [...tagsSet].sort().forEach(t => tagSelect.add(new Option(t, t)));
-    tagSelect.value = currentTag;
+    // Mise à jour du filtre de révision (Langues)
+   const currentLang = langSelect.value;
+    langSelect.innerHTML = '<option value="all">Toutes les langues</option>';
+    [...langsSet].sort().forEach(l => {
+        langSelect.add(new Option(l, l));
+    });
+    langSelect.value = currentLang;
 
-    if (langSelect) {
-        const currentLang = langSelect.value;
-        langSelect.innerHTML = '<option value="all">Toutes les langues</option>';
-        [...langsSet].sort().forEach(l => langSelect.add(new Option(l, l)));
-        langSelect.value = currentLang;
+    // Mise à jour de l'aide à la saisie (Datalist)
+    if (dataList) {
+        dataList.innerHTML = "";
+        [...langsSet].forEach(l => {
+            const opt = document.createElement("option");
+            opt.value = l;
+            dataList.appendChild(opt);
+        });
     }
 }
 
@@ -401,7 +415,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 const imported = JSON.parse(event.target.result);
                 flashcards = [...flashcards, ...imported];
                 await saveFlashcards();
-                location.reload();
+                // Rafraîchissement sans recharger la page
+                displayFlashcards(); 
+                updateStats(); 
+                updateFilters(); 
+                updateChart();
+                alert("Importation réussie !");
             } catch (err) { alert("Fichier JSON invalide"); }
         };
         reader.readAsText(file);
