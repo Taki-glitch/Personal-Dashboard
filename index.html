@@ -43,14 +43,18 @@
 <main>
   <section id="flashcard-widget" class="card">
     <h2>🧠 Révisions du jour</h2>
-    <div style="display: flex; align-items: center; justify-content: space-between;">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px;">
       <div>
         <p id="widget-count" style="font-size: 1.2rem; margin: 0;">Chargement...</p>
-        <small style="color: gray;">Prêt pour une session ?</small>
+        <small id="widget-goal-text" style="color: gray;">Objectif : 0/10</small>
       </div>
       <a href="flashcards.html" class="btn-primary" style="text-decoration: none; background: #007ACC; color: white; padding: 10px 15px; border-radius: 8px;">
       🚀 Réviser
       </a>
+    </div>
+  
+    <div style="background: #eee; height: 10px; border-radius: 5px; overflow: hidden; width: 100%;">
+      <div id="widget-progress-bar" style="background: #2ecc71; width: 0%; height: 100%; transition: width 0.5s ease;"></div>
     </div>
   </section>
   
