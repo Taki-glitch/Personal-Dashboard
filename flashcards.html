@@ -57,17 +57,31 @@
 
   <section class="card">
     <h2>➕ Ajouter une flashcard</h2>
-    <input type="text" id="russe" placeholder="Mot en russe (ex: Привет)">
-    <input type="text" id="francais" placeholder="Traduction française">
-    <input type="text" id="tag" placeholder="Tag / Thème (ex: salutations)">
-    <button id="addFlashcard">Ajouter à ma liste</button>
+    <div class="input-group">
+      <input type="text" id="cardLang" placeholder="Langue (ex: Espagnol, Anglais...)" list="langSuggestions">
+      <datalist id="langSuggestions">
+          <option value="Russe">
+          <option value="Anglais">
+          <option value="Espagnol">
+      </datalist>
+
+      <input type="text" id="frontSide" placeholder="Recto (Mot original)">
+      <input type="text" id="backSide" placeholder="Verso (Traduction)">
+      <input type="text" id="tag" placeholder="Tags (ex: verbe, voyage)">
+      <button id="addFlashcard">Ajouter</button>
+    </div>
   </section>
 
   <section class="card">
     <h2>📋 Mes flashcards</h2>
-    <select id="tagFilter" style="width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 8px;">
-        <option value="all">Tous les tags</option>
-    </select>
+    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+      <select id="langFilter" style="flex: 1; padding: 10px; border-radius: 8px;">
+          <option value="all">Toutes les langues</option>
+      </select>
+      <select id="tagFilter" style="flex: 1; padding: 10px; border-radius: 8px;">
+          <option value="all">Tous les tags</option>
+      </select>
+    </div>
     <ul id="flashcardsList"></ul>
   </section>
   
