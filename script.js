@@ -2,51 +2,52 @@
 import { auth, logout } from './auth.js';
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-/* LOGIQUE D'AUTHENTIFICATION ==== */
+/* ==== LOGIQUE D'AUTHENTIFICATION ==== */
 onAuthStateChanged(auth, (user) => {
-    	const userStatus = document.getElementById("user-status");
-    	const userInfo = document.getElementById("user-info");
-    	const userGuest = document.getElementById("user-guest");
-    	const userName = document.getElementById("user-name");
+    const userStatus = document.getElementById("user-status");
+    const userInfo = document.getElementById("user-info");
+    const userGuest = document.getElementById("user-guest");
+    const userName = document.getElementById("user-name");
+    const logoutBtn = document.getElementById("btn-logout");
 
-    	if (user) {
-        	userStatus.style.display = "none";
-        	userGuest.style.display = "none";
-        	userInfo.style.display = "block";
-        	userName.textContent = user.displayName || user.email;
+    if (!userStatus || !userInfo || !userGuest) return;
+    	
+    if (user) {
+        userStatus.style.display = "none";
+        userGuest.style.display = "none";
+        userInfo.style.display = "block";
+        userName.textContent = user.displayName || user.email;
         
-        	// C'est ici qu'on lancera la synchro Firestore plus tard
-        	console.log("Connecté en tant que :", user.uid);
-    	} else {
-        	userStatus.textContent = "Mode Local";
-        	userGuest.style.display = "block";
-        	userInfo.style.display = "none";
-    	}
+        // On configure le clic seulement si le bouton est là
+        if (logoutBtn) logoutBtn.onclick = () => logout();
+        
+        console.log("Connecté :", user.uid);
+    } else {
+        userStatus.textContent = "Mode Local";
+        userStatus.style.display = "block";
+        userGuest.style.display = "block";
+        userInfo.style.display = "none";
+    }
 });
 
-// On rend la fonction logout accessible au bouton
-document.getElementById("btn-logout").onclick = logout;
-
 document.addEventListener("DOMContentLoaded", () => {
-    // ... dans ton DOMContentLoaded ...
-	
-
-
     /* --- THÈME --- */
     const toggleThemeBtn = document.getElementById("toggle-theme");
     const applyTheme = (theme) => {
         document.body.classList.toggle("dark", theme === "dark");
-        toggleThemeBtn.textContent = theme === "dark" ? "☀️" : "🌙";
+        if(toggleThemeBtn) toggleThemeBtn.textContent = theme === "dark" ? "☀️" : "🌙";
     };
 
     let currentTheme = localStorage.getItem("theme") || "light";
     applyTheme(currentTheme);
 
-    toggleThemeBtn.onclick = () => {
-        currentTheme = currentTheme === "light" ? "dark" : "light";
-        localStorage.setItem("theme", currentTheme);
-        applyTheme(currentTheme);
-    };
+    if(toggleThemeBtn) {
+        toggleThemeBtn.onclick = () => {
+            currentTheme = currentTheme === "light" ? "dark" : "light";
+            localStorage.setItem("theme", currentTheme);
+            applyTheme(currentTheme);
+        };
+    }
 
     /* --- TODO LIST --- */
     const taskList = document.getElementById("task-list");
@@ -55,14 +56,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const renderTasks = () => {
         const tasks = JSON.parse(localStorage.getItem("tasks") || "[]");
-        taskList.innerHTML = tasks.map((t, i) => `
-            <li>
-                <span>${t}</span>
-                <button onclick="removeTask(${i})" style="background:none; color:red; width:auto;">✕</button>
-            </li>
-        `).join("");
+        if(taskList) {
+            taskList.innerHTML = tasks.map((t, i) => `
+                <li>
+                    <span>${t}</span>
+                    <button onclick="removeTask(${i})" style="background:none; color:red; width:auto;">✕</button>
+                </li>
+            `).join("");
+        }
     };
 
+    // On attache la fonction à window pour qu'elle soit visible depuis le HTML (onclick)
     window.removeTask = (index) => {
         const tasks = JSON.parse(localStorage.getItem("tasks") || "[]");
         tasks.splice(index, 1);
@@ -70,15 +74,17 @@ document.addEventListener("DOMContentLoaded", () => {
         renderTasks();
     };
 
-    addTaskBtn.onclick = () => {
-        const text = newTaskInput.value.trim();
-        if (!text) return;
-        const tasks = JSON.parse(localStorage.getItem("tasks") || "[]");
-        tasks.push(text);
-        localStorage.setItem("tasks", JSON.stringify(tasks));
-        newTaskInput.value = "";
-        renderTasks();
-    };
+    if(addTaskBtn) {
+        addTaskBtn.onclick = () => {
+            const text = newTaskInput.value.trim();
+            if (!text) return;
+            const tasks = JSON.parse(localStorage.getItem("tasks") || "[]");
+            tasks.push(text);
+            localStorage.setItem("tasks", JSON.stringify(tasks));
+            newTaskInput.value = "";
+            renderTasks();
+        };
+    }
 
     /* --- MÉTÉO --- */
     const fetchWeather = () => {
@@ -99,8 +105,10 @@ document.addEventListener("DOMContentLoaded", () => {
                             <strong>${Math.round(i.main.temp)}°C</strong>
                         </div>`).join("");
 
-                document.getElementById("weather-today").innerHTML = buildHtml(now);
-                document.getElementById("weather-tomorrow").innerHTML = buildHtml(tomorrow);
+                const todayEl = document.getElementById("weather-today");
+                const tomorrowEl = document.getElementById("weather-tomorrow");
+                if(todayEl) todayEl.innerHTML = buildHtml(now);
+                if(tomorrowEl) tomorrowEl.innerHTML = buildHtml(tomorrow);
             }).catch(() => console.log("Erreur Météo"));
     };
 
@@ -115,10 +123,13 @@ document.addEventListener("DOMContentLoaded", () => {
     ];
 
     const loadRSS = () => {
+        if(!rssList) return;
         rssList.innerHTML = "<p>Chargement...</p>";
-        rssPills.innerHTML = myFeeds.map((f, i) => `
-            <span class="pill">${f.name} <button onclick="removeFeed(${i})">✕</button></span>
-        `).join("");
+        if(rssPills) {
+            rssPills.innerHTML = myFeeds.map((f, i) => `
+                <span class="pill">${f.name} <button onclick="removeFeed(${i})">✕</button></span>
+            `).join("");
+        }
 
         const readArticles = JSON.parse(localStorage.getItem("readArticles") || "[]");
         rssList.innerHTML = "";
@@ -156,32 +167,30 @@ document.addEventListener("DOMContentLoaded", () => {
         loadRSS();
     };
 
-    addRssBtn.onclick = () => {
-        const name = document.getElementById("rss-name").value.trim();
-        const url = document.getElementById("rss-url").value.trim();
-        if (name && url) {
-            myFeeds.push({ name, url });
-            localStorage.setItem("rssFeeds", JSON.stringify(myFeeds));
-            loadRSS();
-        }
-    };
+    if(addRssBtn) {
+        addRssBtn.onclick = () => {
+            const name = document.getElementById("rss-name").value.trim();
+            const url = document.getElementById("rss-url").value.trim();
+            if (name && url) {
+                myFeeds.push({ name, url });
+                localStorage.setItem("rssFeeds", JSON.stringify(myFeeds));
+                loadRSS();
+            }
+        };
+    }
 
-    /* --- FLASHCARD WIDGET AVEC SPRINT ET ALERTES --- */
+    /* --- FLASHCARD WIDGET --- */
     const updateFlashcardWidget = () => {
         const localData = localStorage.getItem("flashcards");
         const logData = localStorage.getItem("revisionLog");
         const widget = document.getElementById("flashcard-widget");
         const widgetCount = document.getElementById("widget-count");
-        const progressBar = document.getElementById("widget-progress-bar");
-        const goalText = document.getElementById("widget-goal-text");
-        const timerDisplay = document.getElementById("sprint-timer");
         
-        if (!widget || !widgetCount) return;
+        if (!widgetCount) return;
 
         const today = new Date().toISOString().split("T")[0];
         const now = new Date();
 
-        // 1. Calcul des révisions
         let countToReview = 0;
         let flashcards = [];
         if (localData) {
@@ -189,7 +198,6 @@ document.addEventListener("DOMContentLoaded", () => {
             countToReview = flashcards.filter(c => c.nextReview <= today).length;
         }
 
-        // 2. Progrès et Chrono
         let doneToday = 0;
         let timeSpent = 0;
         const dailyGoal = 10; 
@@ -202,62 +210,56 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }
 
-        // Affichage Chrono (Format MM:SS)
-        const mins = Math.floor(timeSpent / 60).toString().padStart(2, '0');
-        const secs = (timeSpent % 60).toString().padStart(2, '0');
-        if (timerDisplay) timerDisplay.textContent = `⏱️ ${mins}:${secs}`;
+        // Mise à jour visuelle (Chrono, Barre de progrès...)
+        const timerDisplay = document.getElementById("sprint-timer");
+        if (timerDisplay) {
+            const mins = Math.floor(timeSpent / 60).toString().padStart(2, '0');
+            const secs = (timeSpent % 60).toString().padStart(2, '0');
+            timerDisplay.textContent = `⏱️ ${mins}:${secs}`;
+        }
 
-        // 3. Alerte visuelle (si après 18h et objectif non atteint)
-        if (now.getHours() >= 18 && doneToday < dailyGoal) {
+        if (widget && now.getHours() >= 18 && doneToday < dailyGoal) {
             widget.classList.add("sprint-alert");
-        } else {
+        } else if(widget) {
             widget.classList.remove("sprint-alert");
         }
 
-        // 4. Mise à jour visuelle
         widgetCount.textContent = countToReview === 0 ? "✅ Tout est à jour !" : `${countToReview} carte${countToReview > 1 ? 's' : ''} à réviser`;
-        const progressPercent = Math.min(100, Math.round((doneToday / dailyGoal) * 100));
+        
+        const progressBar = document.getElementById("widget-progress-bar");
         if (progressBar) {
+            const progressPercent = Math.min(100, Math.round((doneToday / dailyGoal) * 100));
             progressBar.style.width = `${progressPercent}%`;
             progressBar.style.backgroundColor = progressPercent >= 100 ? "#2ecc71" : "#007ACC";
         }
-        if (goalText) goalText.textContent = `Objectif : ${doneToday}/${dailyGoal} cartes`;
-
-        // 5. Widget "Mot du jour" (Aléatoire)
-        const wordRusseEl = document.getElementById("word-russe");
-        const wordTradEl = document.getElementById("word-trad");
-        if (flashcards.length > 0 && wordRusseEl && wordTradEl) {
-            const seed = now.getDate() + now.getMonth(); 
-            const randomIndex = seed % flashcards.length;
-            const dailyWord = flashcards[randomIndex];
-            wordRusseEl.textContent = dailyWord.russe;
-            wordTradEl.textContent = dailyWord.francais;
-        }
     };
 
-    /* ==== INITIALISATION GÉNÉRALE ==== */
+    /* ==== INITIALISATION ==== */
     renderTasks();
     fetchWeather();
     loadRSS();
-    updateFlashcardWidget(); // Appel du widget flashcards avec les nouvelles options
+    updateFlashcardWidget();
     
-    document.getElementById("refresh-rss").onclick = loadRSS;
+    const refreshRss = document.getElementById("refresh-rss");
+    if(refreshRss) refreshRss.onclick = loadRSS;
     
     const menuBtn = document.getElementById("menu-btn");
     const sideMenu = document.getElementById("side-menu");
     const closeMenu = document.getElementById("close-menu");
     const overlay = document.getElementById("overlay");
 
-    menuBtn.addEventListener("click", () => {
-        sideMenu.classList.add("open");
-        overlay.classList.add("show");
-    });
+    if(menuBtn) {
+        menuBtn.addEventListener("click", () => {
+            sideMenu.classList.add("open");
+            overlay.classList.add("show");
+        });
+    }
 
-    closeMenu.addEventListener("click", closeMenuFn);
-    overlay.addEventListener("click", closeMenuFn);
-
-    function closeMenuFn() {
+    const closeMenuFn = () => {
         sideMenu.classList.remove("open");
         overlay.classList.remove("show");
-    }
+    };
+
+    if(closeMenu) closeMenu.addEventListener("click", closeMenuFn);
+    if(overlay) overlay.addEventListener("click", closeMenuFn);
 });
