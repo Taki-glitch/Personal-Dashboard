@@ -464,4 +464,46 @@ loadFlashcards().then(() => {
   setTimeout(() => {
     updateChart();
   }, 100);
+
+   /* =====================================
+   GESTION DU MENU ET DU THÈME
+===================================== */
+document.addEventListener("DOMContentLoaded", () => {
+    const menuBtn = document.getElementById("menu-btn");
+    const sideMenu = document.getElementById("side-menu");
+    const closeMenu = document.getElementById("close-menu");
+    const overlay = document.getElementById("overlay");
+    const toggleThemeBtn = document.getElementById("toggle-theme");
+
+    // Fonction pour fermer le menu
+    const closeMenuFn = () => {
+        sideMenu.classList.remove("open");
+        overlay.classList.remove("show");
+    };
+
+    // Ouvrir le menu
+    menuBtn.addEventListener("click", () => {
+        sideMenu.classList.add("open");
+        overlay.classList.add("show");
+    });
+
+    // Fermer le menu
+    closeMenu.addEventListener("click", closeMenuFn);
+    overlay.addEventListener("click", closeMenuFn);
+
+    // Gestion du thème (pour que le bouton fonctionne aussi ici)
+    const applyTheme = (theme) => {
+        document.body.classList.toggle("dark", theme === "dark");
+        toggleThemeBtn.textContent = theme === "dark" ? "☀️" : "🌙";
+    };
+
+    let currentTheme = localStorage.getItem("theme") || "light";
+    applyTheme(currentTheme);
+
+    toggleThemeBtn.onclick = () => {
+        currentTheme = currentTheme === "light" ? "dark" : "light";
+        localStorage.setItem("theme", currentTheme);
+        applyTheme(currentTheme);
+    };
+});
 });
