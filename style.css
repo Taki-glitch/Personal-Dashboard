@@ -1,4 +1,4 @@
-/* ===== BASE & RESET ===== */
+/* ===== BASE & RESET (Structure d'origine préservée) ===== */
 * {
     box-sizing: border-box;
     transition: background 0.3s ease, color 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
@@ -12,7 +12,7 @@ body {
     line-height: 1.6;
 }
 
-/* ===== BOUTONS FIXES ===== */
+/* ===== NAVIGATION & MENU ===== */
 #toggle-theme {
     position: fixed;
     top: 15px;
@@ -38,32 +38,27 @@ body {
     z-index: 1001;
 }
 
-/* ===== MENU LATÉRAL ===== */
 #side-menu {
     position: fixed;
-    top: 0; left: -260px;
-    width: 250px; height: 100%;
-    background: #1e1e1e;
-    color: white; padding: 20px;
-    transition: left 0.3s ease;
-    z-index: 1002;
+    top: 0; left: -260px; width: 250px; height: 100%;
+    background: #1e1e1e; color: white; padding: 20px;
+    transition: left 0.3s ease; z-index: 1002;
 }
+
 #side-menu.open { left: 0; }
-#close-menu { background: none; border: none; color: white; font-size: 22px; cursor: pointer; margin-bottom: 20px; }
 #side-menu ul { list-style: none; padding: 0; }
-#side-menu li { margin: 15px 0; border-bottom: none !important; }
+#side-menu li { margin: 15px 0; border-bottom: none; }
 #side-menu a { color: white; text-decoration: none; font-size: 16px; }
 
 #overlay {
     position: fixed;
     top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.4);
-    opacity: 0; pointer-events: none;
+    background: rgba(0,0,0,0.4); opacity: 0; pointer-events: none;
     transition: opacity 0.3s; z-index: 1000;
 }
 #overlay.show { opacity: 1; pointer-events: auto; }
 
-/* ===== HEADER & MÉTÉO (RÉTABLI) ===== */
+/* ===== HEADER & MÉTÉO (Design Accueil) ===== */
 header {
     background: #007ACC;
     color: white;
@@ -71,23 +66,25 @@ header {
     text-align: center;
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
 }
-header h1 { margin: 0; font-size: 24px; }
-header a { color: #e0e0e0; text-decoration: none; font-size: 14px; display: inline-block; margin-top: 10px; }
-header a:hover { color: white; text-decoration: underline; }
+
+header a { color: #e0e0e0; text-decoration: none; font-size: 14px; margin-top: 8px; display: inline-block; }
 
 #weather-bar {
     display: flex;
     justify-content: center;
     gap: 20px;
     overflow-x: auto;
-    padding-top: 15px;
+    padding: 15px 0;
 }
+
 .weather-day { display: flex; flex-direction: column; align-items: center; }
 .weather-title { font-weight: bold; margin-bottom: 8px; color: white; }
 .weather-hours { display: flex; gap: 12px; }
+
 .weather-hour {
     min-width: 90px;
     background: rgba(255, 255, 255, 0.25);
+    backdrop-filter: blur(5px);
     border-radius: 10px;
     padding: 10px;
     text-align: center;
@@ -95,7 +92,9 @@ header a:hover { color: white; text-decoration: underline; }
     display: flex;
     flex-direction: column;
     align-items: center;
+    color: white;
 }
+
 .weather-hour img { width: 48px; height: 48px; }
 
 /* ===== LAYOUT PRINCIPAL ===== */
@@ -114,125 +113,73 @@ section {
     width: 100%;
     max-width: 450px;
     box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
+
 section:hover {
     transform: translateY(-5px);
     box-shadow: 0 6px 15px rgba(0,0,0,0.15);
 }
 
-/* ===== FORMULAIRES & INPUTS ===== */
+/* ===== FORMULAIRES & BOUTONS ===== */
 input {
-    display: block;
-    width: 100%;
-    margin-bottom: 12px;
-    padding: 12px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    font-size: 14px;
-}
-input:focus {
-    outline: none;
-    border-color: #007ACC;
-    box-shadow: 0 0 5px rgba(0,122,204,0.5);
+    display: block; width: 100%; margin-bottom: 12px;
+    padding: 12px; border: 1px solid #ddd; border-radius: 8px;
 }
 
 button {
-    padding: 10px 15px;
-    border: none;
-    border-radius: 8px;
-    background: #007ACC;
-    color: white;
-    cursor: pointer;
-    font-weight: bold;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    padding: 10px 15px; border: none; border-radius: 8px;
+    background: #007ACC; color: white; cursor: pointer;
+    font-weight: bold; transition: all 0.2s ease;
 }
-button:hover {
-    background: #005A99;
-    transform: translateY(-2px);
-    box-shadow: 0 3px 8px rgba(0,0,0,0.2);
-}
+
+button:hover { background: #005A99; transform: translateY(-2px); box-shadow: 0 3px 8px rgba(0,0,0,0.2); }
 button:active { transform: translateY(1px); }
 
-/* ===== LISTES & SCROLLING (FONCTIONNALITÉ DEMANDÉE) ===== */
-ul { list-style: none; padding: 0; margin: 0; }
+/* ===== LISTES AVEC SCROLLING (Flashcards) ===== */
+ul { list-style: none; padding: 0; }
+
 li {
-    padding: 10px;
-    border-bottom: 1px solid #eee;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    padding: 10px; border-bottom: 1px solid #eee;
+    display: flex; justify-content: space-between; align-items: center;
 }
 
 #flashcardsList, #priorityList, #tagList {
-    max-height: 400px; /* Limite la hauteur */
-    overflow-y: auto;  /* Active le défilement */
-    padding-right: 5px;
+    max-height: 400px; /* Hauteur limitée */
+    overflow-y: auto;  /* Scroll si dépasse */
+    padding-right: 10px;
     margin-top: 10px;
     border-radius: 8px;
 }
 
-/* Scrollbar Style */
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-thumb { background: #ccc; border-radius: 10px; }
-::-webkit-scrollbar-thumb:hover { background: #007ACC; }
+/* Custom Scrollbar */
+#flashcardsList::-webkit-scrollbar { width: 6px; }
+#flashcardsList::-webkit-scrollbar-thumb { background: #ccc; border-radius: 10px; }
 
-/* ===== FLASHCARDS SPÉCIFIQUES ===== */
-.card h2 {
-    margin-top: 0;
-    font-size: 18px;
-    margin-bottom: 15px;
-    border-left: 4px solid #007ACC;
-    padding-left: 10px;
-}
+/* ===== ZONE DE RÉVISION (Design Premium) ===== */
+.card h2 { margin-top: 0; font-size: 18px; margin-bottom: 15px; border-left: 4px solid #007ACC; padding-left: 10px; }
 
 #reviewCard {
-    background: #e8f1fa;
-    padding: 20px;
-    border-radius: 12px;
-    margin-bottom: 15px;
-    text-align: center;
-    font-size: 18px;
-    min-height: 100px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+    background: #e8f1fa; padding: 25px; border-radius: 12px;
+    margin-bottom: 20px; text-align: center; font-size: 18px;
+    min-height: 100px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
 }
-#reviewCard p { margin: 5px 0; }
 
 #reviewActions {
     display: flex;
-    gap: 12px; /* Espacement généreux entre les boutons de révision */
+    gap: 15px; /* Bel espace entre les boutons */
     justify-content: center;
-    margin-top: 15px;
+    flex-wrap: wrap;
 }
 
-/* Couleurs spécifiques Révision */
-#know { background-color: #2ecc71; }
-#dontKnow { background-color: #e74c3c; }
-#hard { background-color: #f39c12; }
+#know { background-color: #2ecc71; padding: 12px 20px; }
+#dontKnow { background-color: #e74c3c; padding: 12px 20px; }
+#hard { background-color: #f39c12; padding: 12px 20px; }
 
-/* ===== RSS & PILLS (RÉTABLI) ===== */
-#rss-sources-pills { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
-.pill {
-    background: #eee;
-    padding: 4px 10px;
-    border-radius: 15px;
-    font-size: 11px;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-}
-.pill:hover { background: #d0d0d0; transform: translateY(-2px); }
-
-/* ===== MODE SOMBRE (COMPLET) ===== */
+/* ===== MODE SOMBRE ===== */
 body.dark { background: #121212; color: #e0e0e0; }
 body.dark section { background: #1e1e1e; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
-body.dark header { background: #005A99; }
 body.dark input { background: #2a2a2a; color: white; border-color: #444; }
-body.dark .pill { background: #333; color: #ccc; }
-body.dark #reviewCard { background: #2a2a2a; color: white; }
+body.dark .weather-hour { background: rgba(255,255,255,0.1); }
 body.dark li { border-bottom-color: #333; }
-body.dark .weather-hour { background: rgba(255, 255, 255, 0.1); }
+body.dark #reviewCard { background: #2a2a2a; color: white; }
