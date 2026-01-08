@@ -235,6 +235,17 @@ window.removeFeed = async (index) => {
     await saveToCloud("rssFeeds", feeds);
 };
 
+// Fonction d'animation de célébration
+function launchCelebration() {
+    if (typeof confetti === 'function') {
+        confetti({
+            particleCount: 150,
+            spread: 70,
+            origin: { y: 0.6 }
+        });
+    }
+}
+
 // --- FLASHCARD WIDGET (CORRIGÉ) ---
 function updateFlashcardWidget() {
     const widgetCount = document.getElementById("widget-count");
