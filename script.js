@@ -134,27 +134,54 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     };
 
-    /* ==== BOUTON MENU ==== */
+    /* --- FLASHCARD WIDGET --- */
+    const updateFlashcardWidget = () => {
+        const localData = localStorage.getItem("flashcards");
+        const widgetCount = document.getElementById("widget-count");
+        
+        if (!widgetCount) return;
+
+        if (!localData) {
+            widgetCount.textContent = "0 carte";
+            return;
+        }
+
+        const flashcards = JSON.parse(localData);
+        const today = new Date().toISOString().split("T")[0];
+        
+        // On compte les cartes dont la date de révision est passée ou égale à aujourd'hui
+        const count = flashcards.filter(c => c.nextReview <= today).length;
+
+        if (count === 0) {
+            widgetCount.textContent = "✅ Tout est à jour !";
+        } else {
+            widgetCount.textContent = `${count} carte${count > 1 ? 's' : ''} à réviser`;
+        }
+    };
+
+    /* ==== INITIALISATION GÉNÉRALE ==== */
     renderTasks();
     fetchWeather();
     loadRSS();
+    updateFlashcardWidget(); // Appel du widget flashcards
+    
     document.getElementById("refresh-rss").onclick = loadRSS;
     
     const menuBtn = document.getElementById("menu-btn");
-	const sideMenu = document.getElementById("side-menu");
-	const closeMenu = document.getElementById("close-menu");
-	const overlay = document.getElementById("overlay");
+    const sideMenu = document.getElementById("side-menu");
+    const closeMenu = document.getElementById("close-menu");
+    const overlay = document.getElementById("overlay");
 
-	menuBtn.addEventListener("click", () => {
-  		sideMenu.classList.add("open");
-  		overlay.classList.add("show");
-	});
+    menuBtn.addEventListener("click", () => {
+        sideMenu.classList.add("open");
+        overlay.classList.add("show");
+    });
 
-	closeMenu.addEventListener("click", closeMenuFn);
-	overlay.addEventListener("click", closeMenuFn);
+    closeMenu.addEventListener("click", closeMenuFn);
+    overlay.addEventListener("click", closeMenuFn);
 
-	function closeMenuFn() {
-  		sideMenu.classList.remove("open");
-  		overlay.classList.remove("show");
-	}
+    function closeMenuFn() {
+        sideMenu.classList.remove("open");
+        overlay.classList.remove("show");
+    }
 });
