@@ -1,4 +1,36 @@
+/* ==== IMPORTS ==== */
+import { auth, logout } from './auth.js';
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+/* LOGIQUE D'AUTHENTIFICATION ==== */
+onAuthStateChanged(auth, (user) => {
+    	const userStatus = document.getElementById("user-status");
+    	const userInfo = document.getElementById("user-info");
+    	const userGuest = document.getElementById("user-guest");
+    	const userName = document.getElementById("user-name");
+
+    	if (user) {
+        	userStatus.style.display = "none";
+        	userGuest.style.display = "none";
+        	userInfo.style.display = "block";
+        	userName.textContent = user.displayName || user.email;
+        
+        	// C'est ici qu'on lancera la synchro Firestore plus tard
+        	console.log("Connecté en tant que :", user.uid);
+    	} else {
+        	userStatus.textContent = "Mode Local";
+        	userGuest.style.display = "block";
+        	userInfo.style.display = "none";
+    	}
+});
+
+// On rend la fonction logout accessible au bouton
+document.getElementById("btn-logout").onclick = logout;
+
 document.addEventListener("DOMContentLoaded", () => {
+    // ... dans ton DOMContentLoaded ...
+	
+
 
     /* --- THÈME --- */
     const toggleThemeBtn = document.getElementById("toggle-theme");
