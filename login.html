@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connexion - Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f4f7f6;
+        }
+        .login-container {
+            width: 100%;
+            max-width: 400px;
+            padding: 20px;
+        }
+        .auth-input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 1rem;
+        }
+        .auth-input:focus {
+            border-color: #007ACC;
+            outline: none;
+            box-shadow: 0 0 5px rgba(0, 122, 204, 0.2);
+        }
+        .divider {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            margin: 20px 0;
+            color: #ccc;
+        }
+        .divider::before, .divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid #eee;
+        }
+        .divider:not(:empty)::before { margin-right: .5em; }
+        .divider:not(:empty)::after { margin-left: .5em; }
+        
+        .google-btn {
+            background: white !important;
+            color: #555 !important;
+            border: 1px solid #ddd !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: background 0.3s;
+        }
+        .google-btn:hover {
+            background: #f9f9f9 !important;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-container">
+        <section class="card" style="text-align: center;">
+            <h1 style="color: #007ACC; margin-bottom: 10px;">👋 Bienvenue</h1>
+            <p style="color: gray; margin-bottom: 25px; font-size: 0.9rem;">Connectez-vous pour synchroniser vos données.</p>
+
+            <div id="auth-fields">
+                <input type="email" id="email" class="auth-input" placeholder="Adresse e-mail">
+                <input type="password" id="password" class="auth-input" placeholder="Mot de passe">
+                
+                <button id="btn-login-email" class="btn-primary" style="width: 100%; margin-bottom: 10px;">
+                    Se connecter
+                </button>
+                
+                <button id="btn-register-email" style="background: none; border: none; color: #007ACC; cursor: pointer; font-size: 0.85rem; text-decoration: underline;">
+                    Créer un compte
+                </button>
+            </div>
+
+            <div class="divider">ou</div>
+
+            <button id="btn-google" class="btn-primary google-btn" style="width: 100%;">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18" alt="Google">
+                Continuer avec Google
+            </button>
+
+            <p style="margin-top: 25px;">
+                <a href="index.html" style="color: gray; text-decoration: none; font-size: 0.8rem;">
+                    Accéder au mode local (sans compte)
+                </a>
+            </p>
+        </section>
+    </div>
+
+    <script type="module">
+        import { loginWithGoogle, loginEmail, registerEmail } from './auth.js';
+
+        // Connexion Google
+        document.getElementById('btn-google').onclick = async () => {
+            await loginWithGoogle();
+        };
+
+        // Connexion Email
+        document.getElementById('btn-login-email').onclick = async () => {
+            const e = document.getElementById('email').value.trim();
+            const p = document.getElementById('password').value.trim();
+            if (e && p) {
+                await loginEmail(e, p);
+            } else {
+                alert("Veuillez remplir tous les champs.");
+            }
+        };
+
+        // Inscription Email
+        document.getElementById('btn-register-email').onclick = async () => {
+            const e = document.getElementById('email').value.trim();
+            const p = document.getElementById('password').value.trim();
+            if (e && p) {
+                if(p.length < 6) {
+                    alert("Le mot de passe doit contenir au moins 6 caractères.");
+                    return;
+                }
+                await registerEmail(e, p);
+            } else {
+                alert("Saisissez un email et un mot de passe pour créer un compte.");
+            }
+        };
+    </script>
+</body>
+</html>
