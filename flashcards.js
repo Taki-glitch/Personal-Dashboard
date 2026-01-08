@@ -187,21 +187,49 @@ function logRevision(grade) {
 
 function updateChart() {
   const log = JSON.parse(localStorage.getItem("revisionLog") || "{}");
-  const labels = Object.keys(log).sort().slice(-7); // 7 derniers jours
+  const labels = Object.keys(log).sort().slice(-7); // On prend les 7 derniers jours
   
-  const ctx = document.getElementById("progressChart").getContext("2d");
-  if (window.progressChart) window.progressChart.destroy();
+  const ctx = document.getElementById("progressChart");
+  if (!ctx) return; // Sécurité si le canvas n'existe pas
+
+  const chartCtx = ctx.getContext("2d");
   
-  window.progressChart = new Chart(ctx, {
+  // Détruire l'ancien graphique s'il existe pour éviter les superpositions au survol
+  if (window.progressChart instanceof Chart) {
+    window.progressChart.destroy();
+  }
+  
+  // Si pas de données, on affiche un message ou un graphique vide propre
+  const successData = labels.map(d => log[d].success || 0);
+  const failData = labels.map(d => log[d].fail || 0);
+
+  window.progressChart = new Chart(chartCtx, {
     type: "bar",
     data: {
-      labels,
+      labels: labels.length > 0 ? labels : [todayISO()],
       datasets: [
-        { label: "Réussites", data: labels.map(d => log[d].success), backgroundColor: '#2ecc71' },
-        { label: "Échecs", data: labels.map(d => log[d].fail), backgroundColor: '#e74c3c' }
+        { 
+          label: "✅ Réussites", 
+          data: successData.length > 0 ? successData : [0], 
+          backgroundColor: '#2ecc71' 
+        },
+        { 
+          label: "❌ Échecs", 
+          data: failData.length > 0 ? failData : [0], 
+          backgroundColor: '#e74c3c' 
+        }
       ]
     },
-    options: { responsive: true, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+    options: { 
+      responsive: true,
+      maintainAspectRatio: false, // Permet au CSS de contrôler la hauteur
+      scales: { 
+        y: { 
+          beginAtZero: true, 
+          ticks: { stepSize: 1, precision: 0 } 
+        } 
+      }
+    }
   });
 }
 
