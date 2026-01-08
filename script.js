@@ -244,13 +244,48 @@ function updateFlashcardWidget() {
     if (logData[today]) {
         doneToday = (logData[today].success || 0) + (logData[today].fail || 0);
     }
-    
+
+    // 🔥 AJOUT : Mise à jour du texte Objectif (ex: 3/10)
+    const goalText = document.getElementById("widget-goal-text");
+    if (goalText) {
+        goalText.textContent = `Objectif : ${doneToday}/10`;
+    }
+
+    const objectif = 10;
     const progressPercent = Math.min(100, Math.round((doneToday / 10) * 100));
     const progressBar = document.getElementById("widget-progress-bar");
+    
+    if (goalText) {
+        // --- LOGIQUE DE FÉLICITATIONS ---
+        if (doneToday >= objectif) {
+            goalText.innerHTML = "🎉 <strong>Objectif atteint ! Bravo !</strong>";
+            goalText.style.color = "#2ecc71";
+            
+            // On lance l'animation si c'est pile le moment (ou via un flag pour ne pas spammer)
+            if (!sessionStorage.getItem('goalCelebrated')) {
+                launchCelebration();
+                sessionStorage.setItem('goalCelebrated', 'true');
+            }
+        } else {
+            goalText.textContent = `Objectif : ${doneToday}/${objectif}`;
+            goalText.style.color = "gray";
+        }
+    }
+    
     if (progressBar) {
         progressBar.style.width = `${progressPercent}%`;
         progressBar.style.backgroundColor = progressPercent === 100 ? "#2ecc71" : "#007ACC";
     }
+}
+
+// Fonction pour l'effet visuel
+function launchCelebration() {
+    confetti({
+        particleCount: 150,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#007ACC', '#2ecc71', '#ffcc00']
+    });
 }
 
 /* ==== 5. INITIALISATION DES ÉVÉNEMENTS (DOM) ==== */
