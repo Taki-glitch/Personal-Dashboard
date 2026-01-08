@@ -44,8 +44,6 @@ export async function loginWithGoogle() {
 export async function loginEmail(email, password) {
   try {
     await signInWithEmailAndPassword(auth, email, password);
-    // Pas besoin de ensureUserDoc ici si on part du principe 
-    // que le compte existe déjà, mais le laisser ne fait pas de mal.
     window.location.href = "index.html";
   } catch (e) {
     alert("Erreur connexion : " + e.message);
@@ -59,6 +57,16 @@ export async function registerEmail(email, password) {
     window.location.href = "index.html";
   } catch (e) {
     alert("Erreur inscription : " + e.message);
+  }
+}
+
+// AJOUT DE LA FONCTION LOGOUT MANQUANTE
+export async function logout() {
+  try {
+    await signOut(auth);
+    window.location.reload(); // Recharge la page pour basculer en mode local
+  } catch (e) {
+    alert("Erreur déconnexion : " + e.message);
   }
 }
 
