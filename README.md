@@ -2,7 +2,7 @@ Personal Dashboard
 
 Mon Dashboard Personnel est une application web personnalisée qui centralise vos outils et informations utiles au quotidien : météo, flux RSS, ToDo list, flashcards pour l’apprentissage, mot du jour, et plus encore. L’application fonctionne en mode local et se synchronise avec Firebase pour un stockage cloud sécurisé.
 
-🔹 Fonctionnalités
+# Fonctionnalités
 1. Authentification
 Connexion avec Google ou email/mot de passe.
 Gestion du mode local pour les utilisateurs non connectés.
@@ -40,19 +40,19 @@ Sélection basée sur le jour de l’année.
 Menu latéral avec navigation entre le Dashboard et les Flashcards.
 UI responsive et agréable avec effets interactifs.
 
-🔹 Technologies utilisées
+# Technologies utilisées
 HTML5, CSS3, JavaScript (ES6 modules)
 Firebase Authentication & Firestore pour la gestion des utilisateurs et la synchronisation cloud.
 OpenWeatherMap API pour la météo.
 RSS2JSON pour la récupération des flux RSS.
 Chart.js pour les graphiques de révision.
 
-🔹 Installation
+# Installation
 1. Cloner le projet :
 git clone https://github.com/ton-utilisateur/personal-dashboard.git
 
 2. Installer un serveur local (optionnel pour tests) :
-# Avec Python 3
+Avec Python 3
 python -m http.server 8000
 
 3. Ouvrir index.html dans un navigateur moderne.
@@ -67,7 +67,7 @@ const firebaseConfig = {
   appId: "VOTRE_APP_ID"
 };
 
-🔹 Usage
+# Usage
 - Connexion / Déconnexion : Boutons dans le menu latéral.
 - Changer le thème : Bouton 🌙/☀️ en haut à droite.
 - Ajouter une tâche : Section ToDo List.
@@ -75,7 +75,7 @@ const firebaseConfig = {
 - Réviser des flashcards : Section Flashcards → sélectionner un tag → démarrer la session.
 - Voir le mot du jour : Widget sur la page d’accueil.
 
-🔹 Structure des fichiers
+# Structure des fichiers
 📂 personal-dashboard/
 ├─ index.html          # Page principale (Dashboard)
 ├─ flashcards.html     # Gestion des flashcards
@@ -86,7 +86,7 @@ const firebaseConfig = {
 ├─ list.json           # Liste de mots russes pour le mot du jour
 └─ README.md           # Documentation
 
-🔹 Contribution
+# Contribution
 Toutes les contributions sont les bienvenues !
 Fork le projet
 Créer une branche (git checkout -b feature/ma-fonctionnalité)
@@ -94,5 +94,6 @@ Commit tes changements (git commit -m 'Ajout fonctionnalité X')
 Push ta branche (git push origin feature/ma-fonctionnalité)
 Ouvrir un Pull Request
 
-🔹 Licence
+
+# Licence
 MIT License — voir le fichier LICENSE pour plus de détails.
