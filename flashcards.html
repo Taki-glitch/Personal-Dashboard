@@ -23,7 +23,7 @@
 <div id="overlay"></div>
 
 <header>
-  <h1>📚 Flashcards – Russe</h1>
+  <h1>📚 Flashcards</h1>
   <p>Apprentissage par répétition espacée (SRS)</p>
 </header>
   
@@ -41,6 +41,16 @@
 
   <section class="card">
     <h2>🧠 Session de Révision</h2>
+
+    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+        <select id="reviewLangFilter" style="flex: 1; padding: 8px; border-radius: 5px;">
+            <option value="all">Toutes les langues</option>
+        </select>
+        <select id="reviewTagFilter" style="flex: 1; padding: 8px; border-radius: 5px;">
+            <option value="all">Tous les tags</option>
+        </select>
+    </div>
+    
     <div id="reviewCard">
       <p>Cliquez sur "Démarrer" pour commencer la révision</p>
     </div>
@@ -58,8 +68,8 @@
   <section class="card">
     <h2>➕ Ajouter une flashcard</h2>
     <div class="input-group">
-      <input type="text" id="cardLang" placeholder="Langue (ex: Espagnol, Anglais...)" list="langSuggestions">
-      <datalist id="langSuggestions">
+      <input type="text" id="cardLang" placeholder="Langue (ex: Espagnol, Anglais...)" list="existingLangs">
+      <datalist id="existingLangs">
           <option value="Russe">
           <option value="Anglais">
           <option value="Espagnol">
