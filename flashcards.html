@@ -2,26 +2,32 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Flashcards – Russe</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flashcards – Russe</title>
   <link rel="stylesheet" href="style.css">
-  <style>
-    /* Petit style pour boutons actifs et layout */
-    .review-filters button.active { background-color: #3498db; color: #fff; }
-    .card { border: 1px solid #ccc; padding: 15px; margin-bottom: 15px; border-radius: 8px; }
-    button { cursor: pointer; }
-  </style>
 </head>
 <body>
 
+<button id="toggle-theme" aria-label="Changer le thème">🌙</button>
+
+<button id="menu-btn" aria-label="Ouvrir le menu">☰</button>
+
+<nav id="side-menu">
+  <button id="close-menu" aria-label="Fermer le menu">✕</button>
+  <ul>
+    <li><a href="index.html">📊 Dashboard</a></li>
+    <li><a href="flashcards.html" class="active">🧠 Flashcards</a></li>
+  </ul>
+</nav>
+
+<div id="overlay"></div>
+
 <header>
   <h1>📚 Flashcards – Russe</h1>
-  <a href="index.html">⬅ Retour au Dashboard</a>
+  <p>Apprentissage par répétition espacée (SRS)</p>
 </header>
   
 <main>
-
-  <!-- Statistiques -->
   <section class="card">
     <h2>📊 Statistiques</h2>
     <ul id="stats">
@@ -33,54 +39,38 @@
     </ul>
   </section>
 
-  <!-- Ajout de flashcard -->
+  <section class="card">
+    <h2>🧠 Session de Révision</h2>
+    <div id="reviewCard">
+      <p>Cliquez sur "Démarrer" pour commencer la révision</p>
+    </div>
+    
+    <div id="reviewActions">
+      <button id="startReview">🚀 Démarrer la session</button>
+      
+      <button id="showAnswer" style="display:none;">👁️ Voir la réponse</button>
+      <button id="know" style="display:none;">✅ Je savais</button>
+      <button id="dontKnow" style="display:none;">❌ Pas encore</button>
+      <button id="hard" style="display:none;">⚠️ Difficile</button>
+    </div>
+  </section>
+
   <section class="card">
     <h2>➕ Ajouter une flashcard</h2>
-    <input type="text" id="russe" placeholder="Mot en russe">
+    <input type="text" id="russe" placeholder="Mot en russe (ex: Привет)">
     <input type="text" id="francais" placeholder="Traduction française">
-    <input type="text" id="tags" placeholder="Tags (séparés par virgule)">
-    <button id="addFlashcard">Ajouter</button>
-  </section>
-  
-    <!-- Révision -->
-  <section class="card">
-    <h2>🎴 Révision</h2>
-
-    <div class="review-filters">
-      <button data-pack="intelligent">🎯 Intelligent</button>
-      <button data-pack="new">🆕 Nouveaux</button>
-      <button data-pack="review">🔁 À revoir</button>
-      <button data-pack="known">⭐ Maîtrisés</button>
-    </div>
-
-    <div>
-      <label for="tagFilter">Filtrer par tag :</label>
-      <select id="tagFilter">
-        <option value="">Tous</option>
-      </select>
-    </div>
-
-    <div id="reviewCard">
-      <p id="reviewRusse">Choisis un paquet</p>
-      <p id="reviewFrancais" style="display:none;"></p>
-    </div>
-    
-    <button id="showAnswer">👁️ Voir la traduction</button>
-    
-    <div id="reviewActions" style="display:none;">
-      <button id="know">✅ Je savais</button>
-      <button id="dontKnow">❌ Je ne savais pas</button>
-      <button id="hard">⚠️ Difficile</button>
-    </div>
+    <input type="text" id="tag" placeholder="Tag / Thème (ex: salutations)">
+    <button id="addFlashcard">Ajouter à ma liste</button>
   </section>
 
-  <!-- Liste des flashcards -->
   <section class="card">
     <h2>📋 Mes flashcards</h2>
+    <select id="tagFilter" style="width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 8px;">
+        <option value="all">Tous les tags</option>
+    </select>
     <ul id="flashcardsList"></ul>
   </section>
   
-  <!-- Performance & Suggestions -->
   <section class="card" id="performanceDashboard">
     <h2>📊 Performance & Suggestions</h2>
     <div id="dashboardStats">
@@ -88,33 +78,34 @@
       <p id="todaySuccess">Réussites : 0 / Échecs : 0</p>
     </div>
     <div id="priorityCards">
-      <h3>Cartes prioritaires demain :</h3>
+      <h3>📅 À réviser demain :</h3>
       <ul id="priorityList"></ul>
     </div>
     <div id="tagProgress">
-      <h3>Progrès par tag :</h3>
+      <h3>📈 Progrès par catégorie :</h3>
       <ul id="tagList"></ul>
     </div>
   </section>
 
-  <!-- Graphique de progression -->
   <section class="card">
     <h2>📈 Progression quotidienne</h2>
     <canvas id="progressChart" width="400" height="200"></canvas>
   </section>
 
-  <!-- Import / Export / Clear -->
   <section class="card">
-    <h2>💾 Import / Export / Supprimer</h2>
-    <button id="exportFlashcards">Exporter JSON</button>
-    <button id="btnImportFlashcards">Importer JSON</button>
-    <input type="file" id="importFlashcards" accept=".json" style="display:none;">
-    <button id="clearFlashcards">Tout supprimer</button>
+    <h2>💾 Gestion des données</h2>
+    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <button id="exportFlashcards">Exporter JSON</button>
+        <button id="btnImportFlashcards">Importer JSON</button>
+        <input type="file" id="importFlashcards" accept=".json" style="display:none;">
+        <button id="clearFlashcards" style="background-color: #e74c3c;">Tout supprimer</button>
+    </div>
   </section>
 </main>
 
-<!-- Chart.js CDN -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="config.js"></script>
 <script src="flashcards.js"></script>
+
 </body>
 </html>
