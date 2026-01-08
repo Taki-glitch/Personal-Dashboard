@@ -144,42 +144,34 @@ document.addEventListener("DOMContentLoaded", () => {
     
         if (!widgetCount || !progressBar) return;
 
-        // 1. Calcul des cartes restant à réviser
         const today = new Date().toISOString().split("T")[0];
+
+        // 1. Calcul des cartes restant à réviser
         let countToReview = 0;
         if (localData) {
             const flashcards = JSON.parse(localData);
             countToReview = flashcards.filter(c => c.nextReview <= today).length;
         }
 
-        // 2. Calcul du progrès (Cartes déjà faites aujourd'hui)
+        // 2. Calcul du progrès (Total des révisions du jour)
         let doneToday = 0;
-        const dailyGoal = 10; // Ton objectif quotidien
+        const dailyGoal = 10; 
         if (logData) {
             const log = JSON.parse(logData);
             if (log[today]) {
-                doneToday = log[today].revisited || 0;
+                // On calcule le total réel : succès + échecs
+                doneToday = (log[today].success || 0) + (log[today].fail || 0);
             }
         }
 
         // 3. Mise à jour visuelle
-        if (countToReview === 0) {
-            widgetCount.textContent = "✅ Tout est à jour !";
-        } else {
-            widgetCount.textContent = `${countToReview} carte${countToReview > 1 ? 's' : ''} à réviser`;
-        }
+        widgetCount.textContent = countToReview === 0 ? "✅ Tout est à jour !" : `${countToReview} carte${countToReview > 1 ? 's' : ''} à réviser`;
 
-        // Calcul du pourcentage de la barre
         const progressPercent = Math.min(100, Math.round((doneToday / dailyGoal) * 100));
         progressBar.style.width = `${progressPercent}%`;
         goalText.textContent = `Objectif : ${doneToday}/${dailyGoal} cartes`;
     
-        // Changer la couleur si l'objectif est atteint
-        if (progressPercent >= 100) {
-            progressBar.style.backgroundColor = "#2ecc71"; // Vert
-        } else {
-            progressBar.style.backgroundColor = "#007ACC"; // Bleu
-        }
+        progressBar.style.backgroundColor = progressPercent >= 100 ? "#2ecc71" : "#007ACC";
     };
 
     /* ==== INITIALISATION GÉNÉRALE ==== */
