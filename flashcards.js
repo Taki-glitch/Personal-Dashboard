@@ -236,9 +236,38 @@ function updatePerformanceDashboard() {
     const today = todayISO();
     const data = revisionLog[today] || { success: 0, fail: 0, timeSeconds: 0 };
     
-    document.getElementById("todayRevised").textContent = `Cartes révisées aujourd'hui : ${data.success + data.fail}`;
-    document.getElementById("todaySuccess").textContent = `Réussites : ${data.success} / Échecs : ${data.fail}`;
+    // 1. Mise à jour des compteurs du jour
+    const todayRevisedEl = document.getElementById("todayRevised");
+    const todaySuccessEl = document.getElementById("todaySuccess");
+    if (todayRevisedEl) todayRevisedEl.textContent = `Cartes révisées aujourd'hui : ${data.success + data.fail}`;
+    if (todaySuccessEl) todaySuccessEl.textContent = `Réussites : ${data.success} / Échecs : ${data.fail}`;
 
+    // 2. LOGIQUE : À RÉVISER DEMAIN (Correction ici ⚡)
+    const priorityList = document.getElementById("priorityList");
+    if (priorityList) {
+        priorityList.innerHTML = "";
+        
+        // Calcul de la date de demain au format ISO (YYYY-MM-DD)
+        const tomorrowDate = new Date();
+        tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+        const tomorrowStr = tomorrowDate.toISOString().split("T")[0];
+
+        // Filtrer les cartes prévues pour demain
+        const tomorrowCards = flashcards.filter(c => c.nextReview === tomorrowStr);
+
+        if (tomorrowCards.length === 0) {
+            priorityList.innerHTML = "<li style='color:gray; font-style:italic;'>Aucune carte prévue pour demain.</li>";
+        } else {
+            tomorrowCards.forEach(c => {
+                const li = document.createElement("li");
+                li.style.marginBottom = "5px";
+                li.innerHTML = `<strong>${c.russe}</strong> <span style="color:gray;">(${c.francais})</span>`;
+                priorityList.appendChild(li);
+            });
+        }
+    }
+
+    // 3. Progrès par catégorie (ton code existant)
     const tagMap = {};
     flashcards.forEach(c => {
         const tags = c.tags || ["Divers"];
