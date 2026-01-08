@@ -317,13 +317,46 @@ function updateTagFilter() {
 
 function displayFlashcards() {
   const list = document.getElementById("flashcardsList");
+  const activeTag = document.getElementById("tagFilter").value; // On récupère le filtre actuel
   list.innerHTML = "";
-  flashcards.slice(-10).reverse().forEach(card => { // 10 dernières
+
+  // 1. On filtre les cartes selon le tag sélectionné
+  let filteredCards = flashcards;
+  if (activeTag !== "all") {
+    filteredCards = flashcards.filter(c => c.tags.includes(activeTag));
+  }
+
+  // 2. On affiche les cartes (inversées pour voir les plus récentes en haut)
+  [...filteredCards].reverse().forEach(card => {
     const li = document.createElement("li");
-    li.innerHTML = `<span>${card.russe} - ${card.francais}</span>`;
+    li.style.display = "flex";
+    li.style.justifyContent = "space-between";
+    li.style.alignItems = "center";
+    li.style.padding = "8px";
+    li.style.borderBottom = "1px solid #eee";
+
+    li.innerHTML = `
+      <span>
+        <strong>${card.russe}</strong> - ${card.francais} 
+        <br><small style="color: #007ACC;">${card.tags.join(', ')}</small>
+      </span>
+    `;
+
     const btn = document.createElement("button");
     btn.textContent = "🗑️";
-    btn.onclick = () => { flashcards = flashcards.filter(c => c.id !== card.id); saveFlashcards(); displayFlashcards(); updateStats(); };
+    btn.style.background = "none";
+    btn.style.border = "none";
+    btn.style.cursor = "pointer";
+    btn.onclick = () => {
+      if(confirm("Supprimer cette carte ?")) {
+        flashcards = flashcards.filter(c => c.id !== card.id);
+        saveFlashcards();
+        displayFlashcards();
+        updateStats();
+        updateTagFilter();
+      }
+    };
+
     li.appendChild(btn);
     list.appendChild(li);
   });
