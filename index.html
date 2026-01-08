@@ -41,8 +41,8 @@
 </header>
 
 <main>
-  <section id="flashcard-widget" class="card">
-    <h2>🧠 Révisions du jour</h2>
+   <section id="flashcard-widget" class="card">
+    <h2>🧠 Révisions du jour <span id="sprint-timer" style="font-size: 0.9rem; font-weight: normal; color: #007ACC; float: right;">⏱️ 00:00</span></h2>
     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px;">
       <div>
         <p id="widget-count" style="font-size: 1.2rem; margin: 0;">Chargement...</p>
@@ -52,9 +52,16 @@
       🚀 Réviser
       </a>
     </div>
-  
     <div style="background: #eee; height: 10px; border-radius: 5px; overflow: hidden; width: 100%;">
-      <div id="widget-progress-bar" style="background: #2ecc71; width: 0%; height: 100%; transition: width 0.5s ease;"></div>
+      <div id="widget-progress-bar" style="background: #007ACC; width: 0%; height: 100%; transition: width 0.5s ease;"></div>
+    </div>
+  </section>
+
+  <section id="russian-word-widget" class="card" style="text-align: center; border-left: 5px solid #007ACC;">
+    <h2 style="font-size: 1rem; color: gray;">🇷🇺 Mot du jour</h2>
+    <div id="word-content">
+      <h1 id="word-russe" style="margin: 10px 0; font-size: 2rem; color: #333;">...</h1>
+      <p id="word-trad" style="font-style: italic; color: #007ACC; font-size: 1.2rem;">chargement...</p>
     </div>
   </section>
   
