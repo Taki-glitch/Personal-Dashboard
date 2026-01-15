@@ -13,7 +13,9 @@ function saveExpenses(expenses) {
 }
 
 function getBudgets() {
-  return JSON.parse(localStorage.getItem(BUDGET_KEY) || '{"global":0,"categories":{}}');
+  return JSON.parse(
+    localStorage.getItem(BUDGET_KEY) || '{"global":0,"categories":{}}'
+  );
 }
 
 function saveBudgets(budgets) {
@@ -40,6 +42,12 @@ function getMonthTotal() {
     .reduce((s, e) => s + e.amount, 0);
 }
 
+function getCategoryMonthTotal(category) {
+  return getExpenses()
+    .filter(e => e.date.startsWith(currentMonth()) && e.category === category)
+    .reduce((s, e) => s + e.amount, 0);
+}
+
 function getCategoryTotals() {
   const totals = {};
   getExpenses()
@@ -51,23 +59,23 @@ function getCategoryTotals() {
 }
 
 /* ===============================
-   ALERTES VISUELLES
+   ALERTES TEXTE (WIDGET)
 ================================ */
 function applyBudgetAlerts() {
   const budgets = getBudgets();
   const monthTotal = getMonthTotal();
+  const el = document.getElementById("budget-month-total");
 
-  const monthEl = document.getElementById("budget-month-total");
-  if (budgets.global > 0 && monthEl) {
-    const ratio = monthTotal / budgets.global;
+  if (!el || budgets.global <= 0) return;
 
-    monthEl.style.color =
-      ratio >= 1 ? "#e74c3c" :
-      ratio >= 0.8 ? "#f39c12" :
-      "";
+  const ratio = monthTotal / budgets.global;
 
-    monthEl.title = `Budget global : ${budgets.global} €`;
-  }
+  el.style.color =
+    ratio >= 1 ? "#e74c3c" :
+    ratio >= 0.8 ? "#f39c12" :
+    "";
+
+  el.title = `Budget global : ${budgets.global} €`;
 }
 
 /* ===============================
@@ -110,7 +118,7 @@ function updateWidget() {
   const m = document.getElementById("budget-month-total");
 
   if (t) t.textContent = todayTotal.toFixed(2) + " €";
-  if (m) t && (m.textContent = monthTotal.toFixed(2) + " €");
+  if (m) m.textContent = monthTotal.toFixed(2) + " €";
 
   applyBudgetAlerts();
 }
@@ -138,8 +146,8 @@ function renderCategoryChart() {
       datasets: [{ data: values }]
     },
     options: {
-      plugins: { legend: { position: "bottom" } },
-      responsive: true
+      responsive: true,
+      plugins: { legend: { position: "bottom" } }
     }
   });
 }
@@ -148,14 +156,17 @@ function renderCategoryChart() {
    AJOUT DÉPENSE
 ================================ */
 function addExpense() {
-  const amount = parseFloat(document.getElementById("amount").value);
+  const amountInput = document.getElementById("amount");
+  const noteInput = document.getElementById("note");
+
+  const amount = parseFloat(amountInput.value);
   if (!amount || amount <= 0) return;
 
   const expense = {
     id: Date.now(),
     amount,
     category: document.getElementById("category").value,
-    note: document.getElementById("note").value.trim(),
+    note: noteInput.value.trim(),
     date: todayISO()
   };
 
@@ -163,9 +174,62 @@ function addExpense() {
   expenses.push(expense);
   saveExpenses(expenses);
 
+  amountInput.value = "";
+  noteInput.value = "";
+
   renderExpenses();
   updateWidget();
   renderCategoryChart();
+  renderBudgetsUI();
+}
+
+/* ===============================
+   BUDGET UI (BARRES)
+================================ */
+function renderBudgetsUI() {
+  const budgets = getBudgets();
+  const monthTotal = getMonthTotal();
+
+  /* GLOBAL */
+  const globalBar = document.getElementById("global-budget-bar");
+  const globalText = document.getElementById("global-budget-text");
+
+  if (globalBar && budgets.global > 0) {
+    const pct = Math.min(100, (monthTotal / budgets.global) * 100);
+    globalBar.style.width = pct + "%";
+    globalText.textContent = `${monthTotal.toFixed(2)} € / ${budgets.global} €`;
+
+    globalBar.className = "";
+    if (pct >= 90) globalBar.classList.add("budget-danger", "sprint-alert");
+    else if (pct >= 70) globalBar.classList.add("budget-warning");
+  }
+
+  /* PAR CATÉGORIE */
+  const container = document.getElementById("category-budgets");
+  if (!container) return;
+
+  container.innerHTML = "";
+
+  Object.entries(budgets.categories).forEach(([cat, limit]) => {
+    const total = getCategoryMonthTotal(cat);
+    const pct = Math.min(100, (total / limit) * 100);
+
+    const block = document.createElement("div");
+    block.className = "budget-block";
+    block.innerHTML = `
+      <strong>${cat}</strong>
+      <div class="budget-bar">
+        <div style="width:${pct}%"></div>
+      </div>
+      <small>${total.toFixed(2)} € / ${limit} €</small>
+    `;
+
+    const bar = block.querySelector(".budget-bar > div");
+    if (pct >= 90) bar.classList.add("budget-danger", "sprint-alert");
+    else if (pct >= 70) bar.classList.add("budget-warning");
+
+    container.appendChild(block);
+  });
 }
 
 /* ===============================
@@ -175,6 +239,7 @@ function saveGlobalBudget() {
   const budgets = getBudgets();
   budgets.global = parseFloat(document.getElementById("budget-global").value) || 0;
   saveBudgets(budgets);
+  renderBudgetsUI();
   applyBudgetAlerts();
 }
 
@@ -185,6 +250,7 @@ function saveCategoryBudget() {
 
   budgets.categories[cat] = val;
   saveBudgets(budgets);
+  renderBudgetsUI();
 }
 
 /* ===============================
@@ -198,4 +264,5 @@ document.addEventListener("DOMContentLoaded", () => {
   renderExpenses();
   updateWidget();
   renderCategoryChart();
+  renderBudgetsUI();
 });
