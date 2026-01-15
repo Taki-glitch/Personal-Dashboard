@@ -220,3 +220,32 @@ body.dark #reviewCard { background: #2a2a2a; color: white; }
   border: 2px solid #e74c3c !important;
   animation: pulse-red 2s infinite;
 }
+
+/* ===== BUDGET UI ===== */
+.budget-block {
+  margin-bottom: 20px;
+}
+
+.budget-bar {
+  background: #eee;
+  border-radius: 8px;
+  height: 12px;
+  overflow: hidden;
+  margin: 6px 0;
+}
+
+.budget-bar > div {
+  height: 100%;
+  width: 0%;
+  background: #2ecc71;
+  transition: width 0.4s ease;
+}
+
+/* Alertes */
+.budget-warning { background: #f39c12 !important; }
+.budget-danger  { background: #e74c3c !important; }
+
+body.dark .budget-bar {
+  background: #333;
+}
+
