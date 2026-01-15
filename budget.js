@@ -2,6 +2,7 @@
    CONFIG & STOCKAGE
 ================================ */
 const STORAGE_KEY = "expenses";
+const BUDGET_KEY = "budgetLimits";
 
 function getExpenses() {
   return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
@@ -9,6 +10,14 @@ function getExpenses() {
 
 function saveExpenses(expenses) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(expenses));
+}
+
+function getBudgets() {
+  return JSON.parse(localStorage.getItem(BUDGET_KEY) || '{"global":0,"categories":{}}');
+}
+
+function saveBudgets(budgets) {
+  localStorage.setItem(BUDGET_KEY, JSON.stringify(budgets));
 }
 
 /* ===============================
@@ -19,20 +28,57 @@ function todayISO() {
 }
 
 function currentMonth() {
-  return todayISO().slice(0, 7); // YYYY-MM
+  return todayISO().slice(0, 7);
 }
 
 /* ===============================
-   RENDU LISTE DÉPENSES
+   TOTAUX
+================================ */
+function getMonthTotal() {
+  return getExpenses()
+    .filter(e => e.date.startsWith(currentMonth()))
+    .reduce((s, e) => s + e.amount, 0);
+}
+
+function getCategoryTotals() {
+  const totals = {};
+  getExpenses()
+    .filter(e => e.date.startsWith(currentMonth()))
+    .forEach(e => {
+      totals[e.category] = (totals[e.category] || 0) + e.amount;
+    });
+  return totals;
+}
+
+/* ===============================
+   ALERTES VISUELLES
+================================ */
+function applyBudgetAlerts() {
+  const budgets = getBudgets();
+  const monthTotal = getMonthTotal();
+
+  const monthEl = document.getElementById("budget-month-total");
+  if (budgets.global > 0 && monthEl) {
+    const ratio = monthTotal / budgets.global;
+
+    monthEl.style.color =
+      ratio >= 1 ? "#e74c3c" :
+      ratio >= 0.8 ? "#f39c12" :
+      "";
+
+    monthEl.title = `Budget global : ${budgets.global} €`;
+  }
+}
+
+/* ===============================
+   LISTE DÉPENSES
 ================================ */
 function renderExpenses() {
   const list = document.getElementById("expense-list");
   if (!list) return;
 
-  const expenses = getExpenses().slice().reverse();
   list.innerHTML = "";
-
-  expenses.forEach(e => {
+  getExpenses().slice().reverse().forEach(e => {
     const li = document.createElement("li");
     li.innerHTML = `
       <span>
@@ -45,7 +91,7 @@ function renderExpenses() {
 }
 
 /* ===============================
-   WIDGET DASHBOARD (JOUR / MOIS)
+   WIDGET DASHBOARD
 ================================ */
 function updateWidget() {
   const expenses = getExpenses();
@@ -64,28 +110,13 @@ function updateWidget() {
   const m = document.getElementById("budget-month-total");
 
   if (t) t.textContent = todayTotal.toFixed(2) + " €";
-  if (m) m.textContent = monthTotal.toFixed(2) + " €";
+  if (m) t && (m.textContent = monthTotal.toFixed(2) + " €");
+
+  applyBudgetAlerts();
 }
 
 /* ===============================
-   DONNÉES GRAPHIQUE
-================================ */
-function getCategoryTotals() {
-  const expenses = getExpenses();
-  const month = currentMonth();
-  const totals = {};
-
-  expenses
-    .filter(e => e.date.startsWith(month))
-    .forEach(e => {
-      totals[e.category] = (totals[e.category] || 0) + e.amount;
-    });
-
-  return totals;
-}
-
-/* ===============================
-   GRAPHIQUE PAR CATÉGORIE
+   GRAPHIQUE
 ================================ */
 let categoryChart = null;
 
@@ -98,24 +129,17 @@ function renderCategoryChart() {
   const values = Object.values(data);
 
   if (categoryChart) categoryChart.destroy();
-
   if (labels.length === 0) return;
 
   categoryChart = new Chart(canvas.getContext("2d"), {
     type: "pie",
     data: {
       labels,
-      datasets: [{
-        data: values
-      }]
+      datasets: [{ data: values }]
     },
     options: {
-      responsive: true,
-      plugins: {
-        legend: {
-          position: "bottom"
-        }
-      }
+      plugins: { legend: { position: "bottom" } },
+      responsive: true
     }
   });
 }
@@ -124,18 +148,14 @@ function renderCategoryChart() {
    AJOUT DÉPENSE
 ================================ */
 function addExpense() {
-  const amountInput = document.getElementById("amount");
-  const categoryInput = document.getElementById("category");
-  const noteInput = document.getElementById("note");
-
-  const amount = parseFloat(amountInput.value);
+  const amount = parseFloat(document.getElementById("amount").value);
   if (!amount || amount <= 0) return;
 
   const expense = {
     id: Date.now(),
     amount,
-    category: categoryInput.value,
-    note: noteInput.value.trim(),
+    category: document.getElementById("category").value,
+    note: document.getElementById("note").value.trim(),
     date: todayISO()
   };
 
@@ -143,22 +163,37 @@ function addExpense() {
   expenses.push(expense);
   saveExpenses(expenses);
 
-  // Reset formulaire
-  amountInput.value = "";
-  noteInput.value = "";
-
-  // Mise à jour UI
   renderExpenses();
   updateWidget();
   renderCategoryChart();
 }
 
 /* ===============================
+   SAUVEGARDE BUDGETS
+================================ */
+function saveGlobalBudget() {
+  const budgets = getBudgets();
+  budgets.global = parseFloat(document.getElementById("budget-global").value) || 0;
+  saveBudgets(budgets);
+  applyBudgetAlerts();
+}
+
+function saveCategoryBudget() {
+  const budgets = getBudgets();
+  const cat = document.getElementById("budget-category").value;
+  const val = parseFloat(document.getElementById("budget-category-amount").value) || 0;
+
+  budgets.categories[cat] = val;
+  saveBudgets(budgets);
+}
+
+/* ===============================
    INIT
 ================================ */
 document.addEventListener("DOMContentLoaded", () => {
-  const btn = document.getElementById("add-expense");
-  if (btn) btn.onclick = addExpense;
+  document.getElementById("add-expense")?.addEventListener("click", addExpense);
+  document.getElementById("save-budget-global")?.addEventListener("click", saveGlobalBudget);
+  document.getElementById("save-budget-category")?.addEventListener("click", saveCategoryBudget);
 
   renderExpenses();
   updateWidget();
