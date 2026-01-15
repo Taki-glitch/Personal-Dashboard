@@ -46,6 +46,28 @@
     <button id="add-expense">Ajouter</button>
   </section>
 
+  <section>
+    <h2>🎯 Budgets mensuels</h2>
+
+    <input type="number" id="budget-global" placeholder="Budget global (€)">
+    <button id="save-budget-global">Enregistrer budget global</button>
+
+    <hr style="margin:20px 0">
+
+    <label>Budget par catégorie</label>
+    <select id="budget-category" style="width:100%;padding:12px;border-radius:8px;margin-bottom:10px;">
+      <option value="Courses">Courses</option>
+      <option value="Logement">Logement</option>
+      <option value="Vêtements">Vêtements</option>
+      <option value="Loisirs">Loisirs</option>
+      <option value="Autre">Autre</option>
+    </select>
+
+    <input type="number" id="budget-category-amount" placeholder="Montant (€)">
+    <button id="save-budget-category">Enregistrer budget catégorie</button>
+  </section>
+
+
   <!-- LISTE -->
   <section>
     <h2>📄 Dépenses récentes</h2>
