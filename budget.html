@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Budget</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<button id="toggle-theme">🌙</button>
+<button id="menu-btn">☰</button>
+
+<nav id="side-menu">
+  <button id="close-menu">✕</button>
+  <ul>
+    <li><a href="index.html">📊 Dashboard</a></li>
+    <li><a href="flashcards.html">🧠 Flashcards</a></li>
+    <li><a href="budget.html">💰 Budget</a></li>
+  </ul>
+</nav>
+
+<div id="overlay"></div>
+
+<header>
+  <h1>💰 Budget</h1>
+</header>
+
+<main>
+
+  <!-- AJOUT DÉPENSE -->
+  <section>
+    <h2>➕ Ajouter une dépense</h2>
+
+    <input type="number" id="amount" placeholder="Montant (€)">
+    
+    <select id="category" style="width:100%;padding:12px;border-radius:8px;margin-bottom:12px;">
+      <option value="Courses">🛒 Courses</option>
+      <option value="Logement">🏠 Logement</option>
+      <option value="Vêtements">👕 Vêtements</option>
+      <option value="Loisirs">🎮 Loisirs</option>
+      <option value="Autre">📦 Autre</option>
+    </select>
+
+    <input type="text" id="note" placeholder="Note (optionnel)">
+    <button id="add-expense">Ajouter</button>
+  </section>
+
+  <!-- LISTE -->
+  <section>
+    <h2>📄 Dépenses récentes</h2>
+    <ul id="expense-list"></ul>
+  </section>
+
+</main>
+
+<script type="module" src="budget.js"></script>
+</body>
+</html>
