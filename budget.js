@@ -1,17 +1,17 @@
-/* ===============================
+/* =====================================================
    CONFIG & ÉTAT UTILISATEUR
-================================ */
+===================================================== */
 const STORAGE_KEY = "expenses";
 const BUDGET_KEY = "budgetLimits";
 
-/* auth.js mettra window.currentUser */
+/* auth.js fournit window.currentUser */
 function isUserLogged() {
   return window.currentUser && window.currentUser.uid;
 }
 
-/* ===============================
+/* =====================================================
    LOCAL STORAGE
-================================ */
+===================================================== */
 function getExpenses() {
   return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
 }
@@ -30,9 +30,9 @@ function saveBudgets(budgets) {
   localStorage.setItem(BUDGET_KEY, JSON.stringify(budgets));
 }
 
-/* ===============================
+/* =====================================================
    UTILITAIRES DATE
-================================ */
+===================================================== */
 function todayISO() {
   return new Date().toISOString().split("T")[0];
 }
@@ -41,11 +41,11 @@ function currentMonth() {
   return todayISO().slice(0, 7);
 }
 
-/* ===============================
+/* =====================================================
    FIREBASE – DÉPENSES
-================================ */
+===================================================== */
 async function loadExpensesFromCloud() {
-  if (!isUserLogged()) return;
+  if (!isUserLogged() || typeof firebase === "undefined") return;
 
   const db = firebase.firestore();
   const uid = window.currentUser.uid;
@@ -61,7 +61,7 @@ async function loadExpensesFromCloud() {
 }
 
 async function syncExpensesToCloud() {
-  if (!isUserLogged()) return;
+  if (!isUserLogged() || typeof firebase === "undefined") return;
 
   const db = firebase.firestore();
   const uid = window.currentUser.uid;
@@ -81,35 +81,36 @@ async function syncExpensesToCloud() {
   await batch.commit();
 }
 
-/* ===============================
+/* =====================================================
    FIREBASE – BUDGETS
-================================ */
+===================================================== */
 async function loadBudgetsFromCloud() {
-  if (!isUserLogged()) return;
+  if (!isUserLogged() || typeof firebase === "undefined") return;
 
   const db = firebase.firestore();
   const uid = window.currentUser.uid;
 
-  const doc = await db.collection("users").doc(uid).get();
-  if (doc.exists && doc.data().budgets) {
-    saveBudgets(doc.data().budgets);
+  const docSnap = await db.collection("users").doc(uid).get();
+  if (docSnap.exists && docSnap.data().budgets) {
+    saveBudgets(docSnap.data().budgets);
   }
 }
 
 async function syncBudgetsToCloud() {
-  if (!isUserLogged()) return;
+  if (!isUserLogged() || typeof firebase === "undefined") return;
 
   const db = firebase.firestore();
   const uid = window.currentUser.uid;
 
-  await db.collection("users").doc(uid).set({
-    budgets: getBudgets()
-  }, { merge: true });
+  await db.collection("users").doc(uid).set(
+    { budgets: getBudgets() },
+    { merge: true }
+  );
 }
 
-/* ===============================
+/* =====================================================
    CALCULS
-================================ */
+===================================================== */
 function getMonthTotal() {
   return getExpenses()
     .filter(e => e.date.startsWith(currentMonth()))
@@ -122,17 +123,16 @@ function getCategoryMonthTotal(category) {
     .reduce((s, e) => s + e.amount, 0);
 }
 
-/* ===============================
+/* =====================================================
    UI – ALERTES
-================================ */
+===================================================== */
 function applyBudgetAlerts() {
   const budgets = getBudgets();
-  const total = getMonthTotal();
   const el = document.getElementById("budget-month-total");
 
   if (!el || budgets.global <= 0) return;
 
-  const ratio = total / budgets.global;
+  const ratio = getMonthTotal() / budgets.global;
 
   el.style.color =
     ratio >= 1 ? "#e74c3c" :
@@ -140,34 +140,37 @@ function applyBudgetAlerts() {
     "";
 }
 
-/* ===============================
+/* =====================================================
    UI – LISTE DÉPENSES
-================================ */
+===================================================== */
 function renderExpenses() {
   const list = document.getElementById("expense-list");
   if (!list) return;
 
   list.innerHTML = "";
-  getExpenses().slice().reverse().forEach(e => {
-    const li = document.createElement("li");
-    li.innerHTML = `
-      <span>
-        <strong>${e.amount.toFixed(2)} €</strong> – ${e.category}
-        <br><small>${e.date}${e.note ? " · " + e.note : ""}</small>
-      </span>
-    `;
-    list.appendChild(li);
-  });
+
+  getExpenses()
+    .slice()
+    .reverse()
+    .forEach(e => {
+      const li = document.createElement("li");
+      li.innerHTML = `
+        <span>
+          <strong>${e.amount.toFixed(2)} €</strong> – ${e.category}
+          <br><small>${e.date}${e.note ? " · " + e.note : ""}</small>
+        </span>
+      `;
+      list.appendChild(li);
+    });
 }
 
-/* ===============================
-   UI – WIDGET
-================================ */
+/* =====================================================
+   UI – WIDGET (sécurisé)
+===================================================== */
 function updateWidget() {
   const todayEl = document.getElementById("budget-today-total");
   const monthEl = document.getElementById("budget-month-total");
 
-  // 👉 Si le widget n’est pas présent sur la page, on sort
   if (!todayEl || !monthEl) return;
 
   const expenses = getExpenses();
@@ -188,9 +191,9 @@ function updateWidget() {
   applyBudgetAlerts();
 }
 
-/* ===============================
+/* =====================================================
    UI – BARRES DE BUDGET
-================================ */
+===================================================== */
 function renderBudgetsUI() {
   const budgets = getBudgets();
   const monthTotal = getMonthTotal();
@@ -198,7 +201,7 @@ function renderBudgetsUI() {
   const globalBar = document.getElementById("global-budget-bar");
   const globalText = document.getElementById("global-budget-text");
 
-  if (globalBar && budgets.global > 0) {
+  if (globalBar && globalText && budgets.global > 0) {
     const pct = Math.min(100, (monthTotal / budgets.global) * 100);
     globalBar.style.width = pct + "%";
     globalText.textContent = `${monthTotal.toFixed(2)} € / ${budgets.global} €`;
@@ -214,6 +217,8 @@ function renderBudgetsUI() {
   container.innerHTML = "";
 
   Object.entries(budgets.categories).forEach(([cat, limit]) => {
+    if (limit <= 0) return;
+
     const total = getCategoryMonthTotal(cat);
     const pct = Math.min(100, (total / limit) * 100);
 
@@ -235,63 +240,12 @@ function renderBudgetsUI() {
   });
 }
 
-/* ===============================
-   ACTIONS UTILISATEUR
-================================ */
-async function addExpense() {
-  const amountInput = document.getElementById("amount");
-  const noteInput = document.getElementById("note");
-
-  const amount = parseFloat(amountInput.value);
-  if (!amount || amount <= 0) return;
-
-  const expense = {
-    id: Date.now(),
-    amount,
-    category: document.getElementById("category").value,
-    note: noteInput.value.trim(),
-    date: todayISO()
-  };
-
-  const expenses = getExpenses();
-  expenses.push(expense);
-  saveExpenses(expenses);
-
-  amountInput.value = "";
-  noteInput.value = "";
-
-  await syncExpensesToCloud();
-
-  renderExpenses();
-  updateWidget();
-  renderBudgetsUI();
-}
-
-async function saveGlobalBudget() {
-  const budgets = getBudgets();
-  budgets.global = parseFloat(document.getElementById("budget-global").value) || 0;
-  saveBudgets(budgets);
-  await syncBudgetsToCloud();
-  renderBudgetsUI();
-}
-
-async function saveCategoryBudget() {
-  const budgets = getBudgets();
-  const cat = document.getElementById("budget-category").value;
-  const val = parseFloat(document.getElementById("budget-category-amount").value) || 0;
-
-  budgets.categories[cat] = val;
-  saveBudgets(budgets);
-  await syncBudgetsToCloud();
-  renderBudgetsUI();
-}
-
+/* =====================================================
+   GRAPHIQUES (Chart.js)
+===================================================== */
 let monthChart = null;
 let categoryChart = null;
 
-/* ===============================
-   DONNÉES POUR GRAPHIQUES
-================================ */
 function getMonthDailyTotals() {
   const map = {};
   const month = currentMonth();
@@ -324,19 +278,17 @@ function getCategoryTotals() {
   };
 }
 
-/* ===============================
-   RENDER CHARTS
-================================ */
 function renderCharts() {
+  if (typeof Chart === "undefined") return;
+
   const monthCanvas = document.getElementById("chart-month");
   const catCanvas = document.getElementById("chart-categories");
 
-  if (!monthCanvas || !catCanvas || typeof Chart === "undefined") return;
+  if (!monthCanvas || !catCanvas) return;
 
-  /* ----- Graphique mensuel ----- */
   const monthData = getMonthDailyTotals();
-
   if (monthChart) monthChart.destroy();
+
   monthChart = new Chart(monthCanvas, {
     type: "line",
     data: {
@@ -354,27 +306,80 @@ function renderCharts() {
     }
   });
 
-  /* ----- Graphique catégories ----- */
   const catData = getCategoryTotals();
-
   if (categoryChart) categoryChart.destroy();
+
   categoryChart = new Chart(catCanvas, {
     type: "doughnut",
     data: {
       labels: catData.labels,
-      datasets: [{
-        data: catData.values
-      }]
+      datasets: [{ data: catData.values }]
     },
-    options: {
-      responsive: true
-    }
+    options: { responsive: true }
   });
 }
 
-/* ===============================
+/* =====================================================
+   ACTIONS UTILISATEUR
+===================================================== */
+async function addExpense() {
+  const amountInput = document.getElementById("amount");
+  if (!amountInput) return;
+
+  const amount = parseFloat(amountInput.value);
+  if (!amount || amount <= 0) return;
+
+  const expense = {
+    id: Date.now(),
+    amount,
+    category: document.getElementById("category")?.value || "Autre",
+    note: document.getElementById("note")?.value.trim() || "",
+    date: todayISO()
+  };
+
+  const expenses = getExpenses();
+  expenses.push(expense);
+  saveExpenses(expenses);
+
+  amountInput.value = "";
+  if (document.getElementById("note")) document.getElementById("note").value = "";
+
+  await syncExpensesToCloud();
+
+  renderExpenses();
+  updateWidget();
+  renderBudgetsUI();
+  renderCharts();
+}
+
+async function saveGlobalBudget() {
+  const input = document.getElementById("budget-global");
+  if (!input) return;
+
+  const budgets = getBudgets();
+  budgets.global = parseFloat(input.value) || 0;
+  saveBudgets(budgets);
+
+  await syncBudgetsToCloud();
+  renderBudgetsUI();
+}
+
+async function saveCategoryBudget() {
+  const catInput = document.getElementById("budget-category");
+  const valInput = document.getElementById("budget-category-amount");
+  if (!catInput || !valInput) return;
+
+  const budgets = getBudgets();
+  budgets.categories[catInput.value] = parseFloat(valInput.value) || 0;
+  saveBudgets(budgets);
+
+  await syncBudgetsToCloud();
+  renderBudgetsUI();
+}
+
+/* =====================================================
    INIT
-================================ */
+===================================================== */
 document.addEventListener("DOMContentLoaded", async () => {
   if (isUserLogged()) {
     await loadExpensesFromCloud();
@@ -388,4 +393,5 @@ document.addEventListener("DOMContentLoaded", async () => {
   renderExpenses();
   updateWidget();
   renderBudgetsUI();
+  renderCharts();
 });
