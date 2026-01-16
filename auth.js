@@ -1,3 +1,6 @@
+/* ===============================
+   FIREBASE IMPORTS
+================================ */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import {
   getAuth,
@@ -15,6 +18,9 @@ import {
   setDoc
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+/* ===============================
+   FIREBASE CONFIG
+================================ */
 const firebaseConfig = {
   apiKey: "AIzaSyBNgBcya0G9Yc4t1uK1U4yzuR0R0gF-EpY",
   authDomain: "personal-dashboard-12eb6.firebaseapp.com",
@@ -25,15 +31,28 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
+
+/* ===============================
+   EXPORTS GLOBAUX
+================================ */
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
-/* ========= AUTH ========= */
+/* ===============================
+   ÉTAT UTILISATEUR GLOBAL
+   (utilisé par budget.js, tasks, etc.)
+================================ */
+window.currentUser = null;
 
+/* ===============================
+   AUTHENTIFICATION
+================================ */
 export async function loginWithGoogle() {
   try {
-    await signInWithPopup(auth, provider);
+    const result = await signInWithPopup(auth, provider);
+    window.currentUser = result.user;
+
     await ensureUserDoc();
     window.location.href = "index.html";
   } catch (e) {
@@ -43,7 +62,10 @@ export async function loginWithGoogle() {
 
 export async function loginEmail(email, password) {
   try {
-    await signInWithEmailAndPassword(auth, email, password);
+    const result = await signInWithEmailAndPassword(auth, email, password);
+    window.currentUser = result.user;
+
+    await ensureUserDoc();
     window.location.href = "index.html";
   } catch (e) {
     alert("Erreur connexion : " + e.message);
@@ -52,7 +74,9 @@ export async function loginEmail(email, password) {
 
 export async function registerEmail(email, password) {
   try {
-    await createUserWithEmailAndPassword(auth, email, password);
+    const result = await createUserWithEmailAndPassword(auth, email, password);
+    window.currentUser = result.user;
+
     await ensureUserDoc();
     window.location.href = "index.html";
   } catch (e) {
@@ -60,19 +84,32 @@ export async function registerEmail(email, password) {
   }
 }
 
-// AJOUT DE LA FONCTION LOGOUT MANQUANTE
 export async function logout() {
   try {
     await signOut(auth);
-    window.location.reload(); // Recharge la page pour basculer en mode local
+    window.currentUser = null;
+    window.location.reload(); // retour mode local
   } catch (e) {
     alert("Erreur déconnexion : " + e.message);
   }
 }
 
+/* ===============================
+   PERSISTENCE SESSION
+   (refresh / retour sur le site)
+================================ */
+onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    window.currentUser = user;
+    await ensureUserDoc();
+  } else {
+    window.currentUser = null;
+  }
+});
 
-/* ========= FIRESTORE INIT ========= */
-
+/* ===============================
+   FIRESTORE INIT UTILISATEUR
+================================ */
 async function ensureUserDoc() {
   const user = auth.currentUser;
   if (!user) return;
@@ -80,31 +117,31 @@ async function ensureUserDoc() {
   const ref = doc(db, "users", user.uid);
   const snap = await getDoc(ref);
 
-  if (!snap.exists()) {
-    // RÉCUPÉRATION DES DONNÉES LOCALES ACTUELLES
-    // (Pour ne pas perdre ce que tu as fait avant de te connecter)
-    const localTasks = JSON.parse(localStorage.getItem("tasks") || "[]");
-    const localRSS = JSON.parse(localStorage.getItem("rssFeeds") || "[]");
-    const localFlashcards = JSON.parse(localStorage.getItem("flashcards") || "[]");
-    const localLog = JSON.parse(localStorage.getItem("revisionLog") || "{}");
+  if (snap.exists()) return;
 
-    // 🔥 LOGIQUE DE FLUX PAR DÉFAUT
-    // Si l'utilisateur n'a pas de flux en local, on lui met Le Monde par défaut
-    const defaultRSS = [
-      { name: "Le Monde", url: "https://www.lemonde.fr/rss/une.xml" }
-    ];
-    
-    const finalRSS = localRSS.length > 0 ? localRSS : defaultRSS;
+  /* ===== DONNÉES LOCALES ===== */
+  const localTasks = JSON.parse(localStorage.getItem("tasks") || "[]");
+  const localRSS = JSON.parse(localStorage.getItem("rssFeeds") || "[]");
+  const localFlashcards = JSON.parse(localStorage.getItem("flashcards") || "[]");
+  const localLog = JSON.parse(localStorage.getItem("revisionLog") || "{}");
+  const localBudgets = JSON.parse(localStorage.getItem("budgetLimits") || '{"global":0,"categories":{}}');
+  const localExpenses = JSON.parse(localStorage.getItem("expenses") || "[]");
 
-    // CRÉATION DU DOCUMENT AVEC LES DONNÉES LOCALES
-    await setDoc(ref, {
-      tasks: localTasks,
-      rssFeeds: localRSS.length > 0 ? localRSS : [{ name: "Le Monde", url: "https://www.lemonde.fr/rss/une.xml" }],
-      flashcards: localFlashcards,
-      revisionLog: localLog,
-      theme: localStorage.getItem("theme") || "light",
-      createdAt: new Date()
-    });
-    console.log("Premier compte créé : Données locales synchronisées vers le Cloud !");
-  }
+  const defaultRSS = [
+    { name: "Le Monde", url: "https://www.lemonde.fr/rss/une.xml" }
+  ];
+
+  /* ===== CRÉATION DU DOCUMENT ===== */
+  await setDoc(ref, {
+    tasks: localTasks,
+    rssFeeds: localRSS.length > 0 ? localRSS : defaultRSS,
+    flashcards: localFlashcards,
+    revisionLog: localLog,
+    budgets: localBudgets,
+    expenses: localExpenses,
+    theme: localStorage.getItem("theme") || "light",
+    createdAt: new Date()
+  });
+
+  console.log("Compte Firebase créé – données locales synchronisées");
 }
