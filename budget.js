@@ -286,6 +286,92 @@ async function saveCategoryBudget() {
   renderBudgetsUI();
 }
 
+let monthChart = null;
+let categoryChart = null;
+
+/* ===============================
+   DONNÉES POUR GRAPHIQUES
+================================ */
+function getMonthDailyTotals() {
+  const map = {};
+  const month = currentMonth();
+
+  getExpenses()
+    .filter(e => e.date.startsWith(month))
+    .forEach(e => {
+      map[e.date] = (map[e.date] || 0) + e.amount;
+    });
+
+  const days = Object.keys(map).sort();
+  return {
+    labels: days.map(d => d.slice(8)),
+    values: days.map(d => map[d])
+  };
+}
+
+function getCategoryTotals() {
+  const map = {};
+
+  getExpenses()
+    .filter(e => e.date.startsWith(currentMonth()))
+    .forEach(e => {
+      map[e.category] = (map[e.category] || 0) + e.amount;
+    });
+
+  return {
+    labels: Object.keys(map),
+    values: Object.values(map)
+  };
+}
+
+/* ===============================
+   RENDER CHARTS
+================================ */
+function renderCharts() {
+  const monthCanvas = document.getElementById("chart-month");
+  const catCanvas = document.getElementById("chart-categories");
+
+  if (!monthCanvas || !catCanvas || typeof Chart === "undefined") return;
+
+  /* ----- Graphique mensuel ----- */
+  const monthData = getMonthDailyTotals();
+
+  if (monthChart) monthChart.destroy();
+  monthChart = new Chart(monthCanvas, {
+    type: "line",
+    data: {
+      labels: monthData.labels,
+      datasets: [{
+        label: "€ / jour",
+        data: monthData.values,
+        tension: 0.3,
+        fill: true
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } }
+    }
+  });
+
+  /* ----- Graphique catégories ----- */
+  const catData = getCategoryTotals();
+
+  if (categoryChart) categoryChart.destroy();
+  categoryChart = new Chart(catCanvas, {
+    type: "doughnut",
+    data: {
+      labels: catData.labels,
+      datasets: [{
+        data: catData.values
+      }]
+    },
+    options: {
+      responsive: true
+    }
+  });
+}
+
 /* ===============================
    INIT
 ================================ */
