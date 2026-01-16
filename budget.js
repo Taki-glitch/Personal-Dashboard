@@ -164,6 +164,12 @@ function renderExpenses() {
    UI – WIDGET
 ================================ */
 function updateWidget() {
+  const todayEl = document.getElementById("budget-today-total");
+  const monthEl = document.getElementById("budget-month-total");
+
+  // 👉 Si le widget n’est pas présent sur la page, on sort
+  if (!todayEl || !monthEl) return;
+
   const expenses = getExpenses();
   const today = todayISO();
   const month = currentMonth();
@@ -176,11 +182,8 @@ function updateWidget() {
     .filter(e => e.date.startsWith(month))
     .reduce((s, e) => s + e.amount, 0);
 
-  document.getElementById("budget-today-total").textContent =
-    todayTotal.toFixed(2) + " €";
-
-  document.getElementById("budget-month-total").textContent =
-    monthTotal.toFixed(2) + " €";
+  todayEl.textContent = todayTotal.toFixed(2) + " €";
+  monthEl.textContent = monthTotal.toFixed(2) + " €";
 
   applyBudgetAlerts();
 }
