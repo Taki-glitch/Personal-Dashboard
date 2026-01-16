@@ -1,9 +1,17 @@
 /* ===============================
-   CONFIG & STOCKAGE
+   CONFIG & ÉTAT UTILISATEUR
 ================================ */
 const STORAGE_KEY = "expenses";
 const BUDGET_KEY = "budgetLimits";
 
+/* auth.js mettra window.currentUser */
+function isUserLogged() {
+  return window.currentUser && window.currentUser.uid;
+}
+
+/* ===============================
+   LOCAL STORAGE
+================================ */
 function getExpenses() {
   return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
 }
@@ -34,7 +42,73 @@ function currentMonth() {
 }
 
 /* ===============================
-   TOTAUX
+   FIREBASE – DÉPENSES
+================================ */
+async function loadExpensesFromCloud() {
+  if (!isUserLogged()) return;
+
+  const db = firebase.firestore();
+  const uid = window.currentUser.uid;
+
+  const snap = await db
+    .collection("users")
+    .doc(uid)
+    .collection("expenses")
+    .get();
+
+  const expenses = snap.docs.map(d => d.data());
+  saveExpenses(expenses);
+}
+
+async function syncExpensesToCloud() {
+  if (!isUserLogged()) return;
+
+  const db = firebase.firestore();
+  const uid = window.currentUser.uid;
+  const expenses = getExpenses();
+
+  const batch = db.batch();
+
+  expenses.forEach(e => {
+    const ref = db
+      .collection("users")
+      .doc(uid)
+      .collection("expenses")
+      .doc(String(e.id));
+    batch.set(ref, e);
+  });
+
+  await batch.commit();
+}
+
+/* ===============================
+   FIREBASE – BUDGETS
+================================ */
+async function loadBudgetsFromCloud() {
+  if (!isUserLogged()) return;
+
+  const db = firebase.firestore();
+  const uid = window.currentUser.uid;
+
+  const doc = await db.collection("users").doc(uid).get();
+  if (doc.exists && doc.data().budgets) {
+    saveBudgets(doc.data().budgets);
+  }
+}
+
+async function syncBudgetsToCloud() {
+  if (!isUserLogged()) return;
+
+  const db = firebase.firestore();
+  const uid = window.currentUser.uid;
+
+  await db.collection("users").doc(uid).set({
+    budgets: getBudgets()
+  }, { merge: true });
+}
+
+/* ===============================
+   CALCULS
 ================================ */
 function getMonthTotal() {
   return getExpenses()
@@ -48,38 +122,26 @@ function getCategoryMonthTotal(category) {
     .reduce((s, e) => s + e.amount, 0);
 }
 
-function getCategoryTotals() {
-  const totals = {};
-  getExpenses()
-    .filter(e => e.date.startsWith(currentMonth()))
-    .forEach(e => {
-      totals[e.category] = (totals[e.category] || 0) + e.amount;
-    });
-  return totals;
-}
-
 /* ===============================
-   ALERTES TEXTE (WIDGET)
+   UI – ALERTES
 ================================ */
 function applyBudgetAlerts() {
   const budgets = getBudgets();
-  const monthTotal = getMonthTotal();
+  const total = getMonthTotal();
   const el = document.getElementById("budget-month-total");
 
   if (!el || budgets.global <= 0) return;
 
-  const ratio = monthTotal / budgets.global;
+  const ratio = total / budgets.global;
 
   el.style.color =
     ratio >= 1 ? "#e74c3c" :
     ratio >= 0.8 ? "#f39c12" :
     "";
-
-  el.title = `Budget global : ${budgets.global} €`;
 }
 
 /* ===============================
-   LISTE DÉPENSES
+   UI – LISTE DÉPENSES
 ================================ */
 function renderExpenses() {
   const list = document.getElementById("expense-list");
@@ -99,7 +161,7 @@ function renderExpenses() {
 }
 
 /* ===============================
-   WIDGET DASHBOARD
+   UI – WIDGET
 ================================ */
 function updateWidget() {
   const expenses = getExpenses();
@@ -114,48 +176,66 @@ function updateWidget() {
     .filter(e => e.date.startsWith(month))
     .reduce((s, e) => s + e.amount, 0);
 
-  const t = document.getElementById("budget-today-total");
-  const m = document.getElementById("budget-month-total");
+  document.getElementById("budget-today-total").textContent =
+    todayTotal.toFixed(2) + " €";
 
-  if (t) t.textContent = todayTotal.toFixed(2) + " €";
-  if (m) m.textContent = monthTotal.toFixed(2) + " €";
+  document.getElementById("budget-month-total").textContent =
+    monthTotal.toFixed(2) + " €";
 
   applyBudgetAlerts();
 }
 
 /* ===============================
-   GRAPHIQUE
+   UI – BARRES DE BUDGET
 ================================ */
-let categoryChart = null;
+function renderBudgetsUI() {
+  const budgets = getBudgets();
+  const monthTotal = getMonthTotal();
 
-function renderCategoryChart() {
-  const canvas = document.getElementById("categoryChart");
-  if (!canvas) return;
+  const globalBar = document.getElementById("global-budget-bar");
+  const globalText = document.getElementById("global-budget-text");
 
-  const data = getCategoryTotals();
-  const labels = Object.keys(data);
-  const values = Object.values(data);
+  if (globalBar && budgets.global > 0) {
+    const pct = Math.min(100, (monthTotal / budgets.global) * 100);
+    globalBar.style.width = pct + "%";
+    globalText.textContent = `${monthTotal.toFixed(2)} € / ${budgets.global} €`;
 
-  if (categoryChart) categoryChart.destroy();
-  if (labels.length === 0) return;
+    globalBar.className = "";
+    if (pct >= 90) globalBar.classList.add("budget-danger", "sprint-alert");
+    else if (pct >= 70) globalBar.classList.add("budget-warning");
+  }
 
-  categoryChart = new Chart(canvas.getContext("2d"), {
-    type: "pie",
-    data: {
-      labels,
-      datasets: [{ data: values }]
-    },
-    options: {
-      responsive: true,
-      plugins: { legend: { position: "bottom" } }
-    }
+  const container = document.getElementById("category-budgets");
+  if (!container) return;
+
+  container.innerHTML = "";
+
+  Object.entries(budgets.categories).forEach(([cat, limit]) => {
+    const total = getCategoryMonthTotal(cat);
+    const pct = Math.min(100, (total / limit) * 100);
+
+    const div = document.createElement("div");
+    div.className = "budget-block";
+    div.innerHTML = `
+      <strong>${cat}</strong>
+      <div class="budget-bar">
+        <div style="width:${pct}%"></div>
+      </div>
+      <small>${total.toFixed(2)} € / ${limit} €</small>
+    `;
+
+    const bar = div.querySelector(".budget-bar > div");
+    if (pct >= 90) bar.classList.add("budget-danger", "sprint-alert");
+    else if (pct >= 70) bar.classList.add("budget-warning");
+
+    container.appendChild(div);
   });
 }
 
 /* ===============================
-   AJOUT DÉPENSE
+   ACTIONS UTILISATEUR
 ================================ */
-function addExpense() {
+async function addExpense() {
   const amountInput = document.getElementById("amount");
   const noteInput = document.getElementById("note");
 
@@ -177,92 +257,46 @@ function addExpense() {
   amountInput.value = "";
   noteInput.value = "";
 
+  await syncExpensesToCloud();
+
   renderExpenses();
   updateWidget();
-  renderCategoryChart();
   renderBudgetsUI();
 }
 
-/* ===============================
-   BUDGET UI (BARRES)
-================================ */
-function renderBudgetsUI() {
-  const budgets = getBudgets();
-  const monthTotal = getMonthTotal();
-
-  /* GLOBAL */
-  const globalBar = document.getElementById("global-budget-bar");
-  const globalText = document.getElementById("global-budget-text");
-
-  if (globalBar && budgets.global > 0) {
-    const pct = Math.min(100, (monthTotal / budgets.global) * 100);
-    globalBar.style.width = pct + "%";
-    globalText.textContent = `${monthTotal.toFixed(2)} € / ${budgets.global} €`;
-
-    globalBar.className = "";
-    if (pct >= 90) globalBar.classList.add("budget-danger", "sprint-alert");
-    else if (pct >= 70) globalBar.classList.add("budget-warning");
-  }
-
-  /* PAR CATÉGORIE */
-  const container = document.getElementById("category-budgets");
-  if (!container) return;
-
-  container.innerHTML = "";
-
-  Object.entries(budgets.categories).forEach(([cat, limit]) => {
-    const total = getCategoryMonthTotal(cat);
-    const pct = Math.min(100, (total / limit) * 100);
-
-    const block = document.createElement("div");
-    block.className = "budget-block";
-    block.innerHTML = `
-      <strong>${cat}</strong>
-      <div class="budget-bar">
-        <div style="width:${pct}%"></div>
-      </div>
-      <small>${total.toFixed(2)} € / ${limit} €</small>
-    `;
-
-    const bar = block.querySelector(".budget-bar > div");
-    if (pct >= 90) bar.classList.add("budget-danger", "sprint-alert");
-    else if (pct >= 70) bar.classList.add("budget-warning");
-
-    container.appendChild(block);
-  });
-}
-
-/* ===============================
-   SAUVEGARDE BUDGETS
-================================ */
-function saveGlobalBudget() {
+async function saveGlobalBudget() {
   const budgets = getBudgets();
   budgets.global = parseFloat(document.getElementById("budget-global").value) || 0;
   saveBudgets(budgets);
+  await syncBudgetsToCloud();
   renderBudgetsUI();
-  applyBudgetAlerts();
 }
 
-function saveCategoryBudget() {
+async function saveCategoryBudget() {
   const budgets = getBudgets();
   const cat = document.getElementById("budget-category").value;
   const val = parseFloat(document.getElementById("budget-category-amount").value) || 0;
 
   budgets.categories[cat] = val;
   saveBudgets(budgets);
+  await syncBudgetsToCloud();
   renderBudgetsUI();
 }
 
 /* ===============================
    INIT
 ================================ */
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
+  if (isUserLogged()) {
+    await loadExpensesFromCloud();
+    await loadBudgetsFromCloud();
+  }
+
   document.getElementById("add-expense")?.addEventListener("click", addExpense);
   document.getElementById("save-budget-global")?.addEventListener("click", saveGlobalBudget);
   document.getElementById("save-budget-category")?.addEventListener("click", saveCategoryBudget);
 
   renderExpenses();
   updateWidget();
-  renderCategoryChart();
   renderBudgetsUI();
 });
