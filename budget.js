@@ -124,18 +124,9 @@ function updateWidget() {
 }
 
 /* ===============================
-   GRAPHIQUE AMÉLIORÉ
+   GRAPHIQUE
 ================================ */
 let categoryChart = null;
-
-// Configuration des couleurs par catégorie
-const categoryColors = {
-  "Courses": "#2ecc71",   // Vert
-  "Logement": "#3498db",  // Bleu
-  "Vêtements": "#9b59b6", // Violet
-  "Loisirs": "#f1c40f",   // Jaune
-  "Autre": "#95a5a6"      // Gris
-};
 
 function renderCategoryChart() {
   const canvas = document.getElementById("categoryChart");
@@ -144,43 +135,19 @@ function renderCategoryChart() {
   const data = getCategoryTotals();
   const labels = Object.keys(data);
   const values = Object.values(data);
-  
-  // Générer le tableau de couleurs basé sur les labels présents
-  const backgroundColors = labels.map(label => categoryColors[label] || "#34495e");
 
   if (categoryChart) categoryChart.destroy();
   if (labels.length === 0) return;
 
   categoryChart = new Chart(canvas.getContext("2d"), {
-    type: "doughnut", // Le type 'doughnut' est souvent plus moderne que 'pie'
+    type: "pie",
     data: {
       labels,
-      datasets: [{
-        data: values,
-        backgroundColor: backgroundColors,
-        borderWidth: 2,
-        hoverOffset: 10
-      }]
+      datasets: [{ data: values }]
     },
     options: {
       responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          position: "bottom",
-          labels: {
-            padding: 20,
-            usePointStyle: true,
-            font: { size: 12 }
-          }
-        },
-        tooltip: {
-          callbacks: {
-            label: (context) => ` ${context.label}: ${context.raw.toFixed(2)} €`
-          }
-        }
-      },
-      cutout: '70%' // Pour l'effet anneau (doughnut)
+      plugins: { legend: { position: "bottom" } }
     }
   });
 }
