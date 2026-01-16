@@ -40,59 +40,63 @@ async function saveFlashcards() {
     STOCKAGE & CHARGEMENT
 ===================================== */
 async function loadFlashcards() {
+    // 1️⃣ Charger les flashcards locales
     const localData = localStorage.getItem("flashcards");
-    let rawCards = localData ? JSON.parse(localData) : [];
-
-    // MIGRATION & NETTOYAGE (Important pour ne rien perdre)
-    flashcards = rawCards.map(c => ({
-        ...c,
-        front: c.front || c.russe || "", 
-        back: c.back || c.francais || "",
-        language: c.language || "Russe",
-        erreurs: c.erreurs || 0,
-        ease: c.ease || 2.5,
-        repetitions: c.repetitions || 0,
-        interval: c.interval || 1,
-        nextReview: c.nextReview || todayISO()
-    }));
+    flashcards = localData ? JSON.parse(localData) : [];
 
     const localLog = localStorage.getItem("revisionLog");
     revisionLog = localLog ? JSON.parse(localLog) : {}; 
 
     try {
+        // 2️⃣ Charger la liste depuis GitHub
         const response = await fetch("https://raw.githubusercontent.com/Taki-glitch/Personal-Dashboard/main/list.json");
-        if (response.ok) {
-            const baseFlashcards = await response.json();
-            const existingSet = new Set(flashcards.map(c => c.front.toLowerCase()));
+        if (!response.ok) throw new Error("Impossible de charger la liste GitHub");
 
-            baseFlashcards.forEach(c => {
-                if (!existingSet.has(c.russe.toLowerCase())) {
+        const baseFlashcards = await response.json();
+
+        // 3️⃣ Créer un set pour éviter les doublons
+        const existingSet = new Set(flashcards.map(c => c.front.toLowerCase() + "|" + c.back.toLowerCase()));
+
+        baseFlashcards.forEach(c => {
+            // Détecter tous les champs de langue sauf "francais" et "tag(s)"
+            Object.keys(c).forEach(key => {
+                if (key === "francais" || key === "tag" || key === "tags") return;
+                const front = c[key];
+                const back = c.francais;
+                if (!front || !back) return;
+
+                const keyId = front.toLowerCase() + "|" + back.toLowerCase();
+                if (!existingSet.has(keyId)) {
                     const tags = c.tag ? [c.tag] : (c.tags || []);
-                    flashcards.push(createFlashcard(c.russe, c.francais, tags, "Russe"));
+                    flashcards.push(createFlashcard(front, back, tags, key)); // key = nom de la langue
+                    existingSet.add(keyId);
                 }
             });
-            await saveFlashcards();
-        }
+        });
+
+        await saveFlashcards(); // Sauvegarde locale + cloud
+
     } catch (err) {
-        console.error("⚠️ Info : Liste GitHub ignorée", err);
+        console.error("⚠️ Info : Chargement liste GitHub ignoré (utilisation locale seulement)", err);
     }
 }
 
-function createFlashcard(front, back, tags = [], lang = "Général") {
+// Création d'une flashcard générique
+function createFlashcard(front, back, tags = [], language = "Général") {
     return {
-        id: Date.now() + Math.random().toString(36).substr(2, 9),
-        front: front,
-        back: back,
-        tags: tags,
-        language: lang,
-        level: 0,
-        nextReview: todayISO(),
+        id: Date.now() + Math.floor(Math.random() * 1000000),
+        front,
+        back,
+        tags: Array.isArray(tags) ? tags : [tags],
+        language,       // On stocke la langue automatiquement
         repetitions: 0,
         erreurs: 0,
         interval: 1,
-        ease: 2.5
+        ease: 2.5,
+        nextReview: todayISO()
     };
 }
+
 
 /* =====================================
     LOGIQUE SRS (Spaced Repetition)
