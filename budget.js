@@ -1,10 +1,21 @@
 /* =====================================================
+   FIREBASE (API MODULAIRE v10)
+===================================================== */
+import { db } from "./auth.js";
+import {
+  collection,
+  doc,
+  getDocs,
+  getDoc,
+  setDoc
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+/* =====================================================
    CONFIG & ÉTAT UTILISATEUR
 ===================================================== */
 const STORAGE_KEY = "expenses";
 const BUDGET_KEY = "budgetLimits";
 
-/* auth.js fournit window.currentUser */
 function isUserLogged() {
   return window.currentUser && window.currentUser.uid;
 }
@@ -45,64 +56,48 @@ function currentMonth() {
    FIREBASE – DÉPENSES
 ===================================================== */
 async function loadExpensesFromCloud() {
-  if (!isUserLogged() || typeof firebase === "undefined") return;
+  if (!isUserLogged()) return;
 
-  const db = firebase.firestore();
-  const uid = window.currentUser.uid;
-
-  const snap = await db
-    .collection("users")
-    .doc(uid)
-    .collection("expenses")
-    .get();
+  const ref = collection(db, "users", window.currentUser.uid, "expenses");
+  const snap = await getDocs(ref);
 
   const expenses = snap.docs.map(d => d.data());
   saveExpenses(expenses);
 }
 
 async function syncExpensesToCloud() {
-  if (!isUserLogged() || typeof firebase === "undefined") return;
+  if (!isUserLogged()) return;
 
-  const db = firebase.firestore();
-  const uid = window.currentUser.uid;
   const expenses = getExpenses();
+  const uid = window.currentUser.uid;
 
-  const batch = db.batch();
-
-  expenses.forEach(e => {
-    const ref = db
-      .collection("users")
-      .doc(uid)
-      .collection("expenses")
-      .doc(String(e.id));
-    batch.set(ref, e);
-  });
-
-  await batch.commit();
+  for (const e of expenses) {
+    await setDoc(
+      doc(db, "users", uid, "expenses", String(e.id)),
+      e
+    );
+  }
 }
 
 /* =====================================================
    FIREBASE – BUDGETS
 ===================================================== */
 async function loadBudgetsFromCloud() {
-  if (!isUserLogged() || typeof firebase === "undefined") return;
+  if (!isUserLogged()) return;
 
-  const db = firebase.firestore();
-  const uid = window.currentUser.uid;
+  const ref = doc(db, "users", window.currentUser.uid);
+  const snap = await getDoc(ref);
 
-  const docSnap = await db.collection("users").doc(uid).get();
-  if (docSnap.exists && docSnap.data().budgets) {
-    saveBudgets(docSnap.data().budgets);
+  if (snap.exists() && snap.data().budgets) {
+    saveBudgets(snap.data().budgets);
   }
 }
 
 async function syncBudgetsToCloud() {
-  if (!isUserLogged() || typeof firebase === "undefined") return;
+  if (!isUserLogged()) return;
 
-  const db = firebase.firestore();
-  const uid = window.currentUser.uid;
-
-  await db.collection("users").doc(uid).set(
+  await setDoc(
+    doc(db, "users", window.currentUser.uid),
     { budgets: getBudgets() },
     { merge: true }
   );
@@ -165,7 +160,7 @@ function renderExpenses() {
 }
 
 /* =====================================================
-   UI – WIDGET (sécurisé)
+   UI – WIDGET
 ===================================================== */
 function updateWidget() {
   const todayEl = document.getElementById("budget-today-total");
@@ -216,11 +211,18 @@ function renderBudgetsUI() {
 
   container.innerHTML = "";
 
-  Object.entries(budgets.categories).forEach(([cat, limit]) => {
-    if (limit <= 0) return;
+  const expenses = getExpenses();
+  const categories = new Set(expenses.map(e => e.category));
 
+  Object.keys(budgets.categories).forEach(c => categories.add(c));
+
+  categories.forEach(cat => {
+    const limit = budgets.categories[cat] || 0;
     const total = getCategoryMonthTotal(cat);
-    const pct = Math.min(100, (total / limit) * 100);
+
+    if (total === 0 && limit === 0) return;
+
+    const pct = limit > 0 ? Math.min(100, (total / limit) * 100) : 0;
 
     const div = document.createElement("div");
     div.className = "budget-block";
@@ -229,12 +231,14 @@ function renderBudgetsUI() {
       <div class="budget-bar">
         <div style="width:${pct}%"></div>
       </div>
-      <small>${total.toFixed(2)} € / ${limit} €</small>
+      <small>${total.toFixed(2)} € ${limit > 0 ? "/ " + limit + " €" : "(sans budget)"}</small>
     `;
 
     const bar = div.querySelector(".budget-bar > div");
-    if (pct >= 90) bar.classList.add("budget-danger", "sprint-alert");
-    else if (pct >= 70) bar.classList.add("budget-warning");
+    if (limit > 0) {
+      if (pct >= 90) bar.classList.add("budget-danger", "sprint-alert");
+      else if (pct >= 70) bar.classList.add("budget-warning");
+    }
 
     container.appendChild(div);
   });
@@ -300,10 +304,7 @@ function renderCharts() {
         fill: true
       }]
     },
-    options: {
-      responsive: true,
-      plugins: { legend: { display: false } }
-    }
+    options: { responsive: true, plugins: { legend: { display: false } } }
   });
 
   const catData = getCategoryTotals();
@@ -342,7 +343,7 @@ async function addExpense() {
   saveExpenses(expenses);
 
   amountInput.value = "";
-  if (document.getElementById("note")) document.getElementById("note").value = "";
+  document.getElementById("note")?.value = "";
 
   await syncExpensesToCloud();
 
