@@ -343,7 +343,9 @@ async function addExpense() {
   saveExpenses(expenses);
 
   amountInput.value = "";
-  document.getElementById("note")?.value = "";
+   
+  const noteInput = document.getElementById("note");
+      if (noteInput) noteInput.value = "";
 
   await syncExpensesToCloud();
 
