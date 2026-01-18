@@ -8,73 +8,68 @@
 </head>
 <body>
 
-<!-- BOUTONS FIXES -->
 <button id="toggle-theme">🌙</button>
 <button id="menu-btn">☰</button>
 
-<!-- MENU LATÉRAL -->
 <nav id="side-menu">
   <button id="close-menu">✕</button>
+  
+  <div id="user-profile" style="padding: 20px; border-bottom: 1px solid #eee; text-align: center;">
+    <p id="user-status" style="font-size: 0.9rem; color: gray; margin-bottom: 10px;">Chargement...</p>
+    <div id="user-info" style="display: none;">
+      <strong id="user-name" style="display: block; margin-bottom: 10px; font-size: 1rem;">Utilisateur</strong>
+      <button id="btn-logout" style="background: none; border: 1px solid #e74c3c; color: #e74c3c; padding: 5px 10px; border-radius: 5px; cursor: pointer;">Déconnexion</button>
+    </div>
+    <div id="user-guest">
+      <a href="login.html" style="text-decoration: none; color: #007ACC; font-weight: bold;">Se connecter</a>
+    </div>
+  </div>
+
   <ul>
     <li><a href="index.html">📊 Dashboard</a></li>
     <li><a href="flashcards.html">🧠 Flashcards</a></li>
-    <li><a href="budget.html">💰 Budget</a></li>
+    <li><a href="budget.html" class="active">💰 Budget</a></li>
   </ul>
 </nav>
 
 <div id="overlay"></div>
 
 <header>
-  <h1>💰 Budget</h1>
+  <h1>💰 Gestion Budget</h1>
 </header>
 
 <main>
-
-  <!-- ============================= -->
-  <!-- AJOUT DÉPENSE -->
-  <!-- ============================= -->
-  <section>
+  <section class="card">
     <h2>➕ Ajouter une dépense</h2>
-
     <input type="number" id="amount" placeholder="Montant (€)">
-
-    <select id="category" class="full-width">
+    <input type="date" id="expense-date"> <select id="category" class="full-width">
       <option value="Courses">🛒 Courses</option>
       <option value="Logement">🏠 Logement</option>
       <option value="Vêtements">👕 Vêtements</option>
       <option value="Loisirs">🎮 Loisirs</option>
       <option value="Autre">📦 Autre</option>
     </select>
-
     <input type="text" id="note" placeholder="Note (optionnel)">
     <button id="add-expense">Ajouter</button>
   </section>
 
-  <!-- ============================= -->
-  <!-- SÉLECTEUR DE MOIS -->
-  <!-- ============================= -->
-  <section>
-    <h2>📅 Mois analysé</h2>
-
-    <div class="month-selector">
-      <button id="prev-month">◀</button>
-      <span id="current-month-label">—</span>
-      <button id="next-month">▶</button>
+  <section class="card" style="text-align: center;">
+    <div class="month-selector" style="display: flex; align-items: center; justify-content: center; gap: 20px;">
+      <button id="prev-month" class="btn-circle">◀</button>
+      <h2 id="current-month-label" style="margin:0; min-width: 150px;">—</h2>
+      <button id="next-month" class="btn-circle">▶</button>
     </div>
   </section>
 
-  <!-- ============================= -->
-  <!-- BUDGETS -->
-  <!-- ============================= -->
-  <section>
+  <section class="card">
     <h2>🎯 Budgets mensuels</h2>
+    <label>Budget Global (€)</label>
+    <input type="number" id="budget-global" placeholder="Ex: 1000">
+    <button id="save-budget-global">Enregistrer global</button>
 
-    <input type="number" id="budget-global" placeholder="Budget global (€)">
-    <button id="save-budget-global">Enregistrer budget global</button>
+    <hr style="margin:20px 0; border: 0; border-top: 1px solid #eee;">
 
-    <hr style="margin:20px 0">
-
-    <label>Budget par catégorie</label>
+    <label>Par catégorie</label>
     <select id="budget-category" class="full-width">
       <option value="Courses">Courses</option>
       <option value="Logement">Logement</option>
@@ -82,54 +77,32 @@
       <option value="Loisirs">Loisirs</option>
       <option value="Autre">Autre</option>
     </select>
-
     <input type="number" id="budget-category-amount" placeholder="Montant (€)">
-    <button id="save-budget-category">Enregistrer budget catégorie</button>
+    <button id="save-budget-category">Enregistrer catégorie</button>
   </section>
 
-  <!-- ============================= -->
-  <!-- BARRES DE BUDGET -->
-  <!-- ============================= -->
-  <section>
-    <h2>📊 Suivi du budget</h2>
-
+  <section class="card">
+    <h2>📊 État du mois</h2>
     <div class="budget-block">
-      <strong>Budget mensuel</strong>
-      <div class="budget-bar">
-        <div id="global-budget-bar"></div>
-      </div>
+      <strong>Total mensuel</strong>
+      <div class="budget-bar"><div id="global-budget-bar"></div></div>
       <small id="global-budget-text">0 € / 0 €</small>
     </div>
-
     <div id="category-budgets"></div>
   </section>
 
-  <!-- ============================= -->
-  <!-- LISTE DES DÉPENSES -->
-  <!-- ============================= -->
-  <section>
-    <h2>📄 Dépenses récentes</h2>
+  <section class="card">
+    <h2>📄 Détails des dépenses</h2>
     <ul id="expense-list"></ul>
   </section>
 
-  <!-- ============================= -->
-  <!-- GRAPHIQUES -->
-  <!-- ============================= -->
-  <section class="budget-charts">
-    <h3>📈 Dépenses par jour</h3>
+  <section class="card">
     <canvas id="chart-month" height="200"></canvas>
-
-    <h3>🥧 Répartition par catégorie</h3>
     <canvas id="chart-categories" height="200"></canvas>
   </section>
-
 </main>
 
-<!-- CHART.JS -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-<!-- LOGIQUE -->
 <script type="module" src="budget.js"></script>
-
 </body>
 </html>
