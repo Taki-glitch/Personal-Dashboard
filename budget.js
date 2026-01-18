@@ -302,9 +302,19 @@ function refreshUI() {
   renderCharts();
 }
 
-document.addEventListener("DOMContentLoaded", async () => {
-  if (isUserLogged()) await loadFromCloud();
-  refreshUI();
+// On écoute le signal de auth.js
+window.addEventListener("user-ready", async () => {
+  if (isUserLogged()) {
+    await loadFromCloud();
+    refreshUI();
+  }
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+  // Si l'utilisateur est déjà reconnu immédiatement
+  if (isUserLogged()) {
+    loadFromCloud().then(refreshUI);
+  }
 
   document.getElementById("add-expense")?.addEventListener("click", addExpense);
   document.getElementById("save-budget-global")?.addEventListener("click", saveGlobalBudget);
