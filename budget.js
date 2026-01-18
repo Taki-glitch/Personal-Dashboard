@@ -1,37 +1,35 @@
 /* =====================================================
-   FIREBASE (API MODULAIRE v10)
+    FIREBASE & AUTH
 ===================================================== */
-import { db } from "./auth.js";
+import { db, auth, logout } from "./auth.js";
 import {
-  collection,
-  doc,
-  getDocs,
-  getDoc,
-  setDoc
+  collection, doc, getDocs, getDoc, setDoc, deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 /* =====================================================
-   CONFIG & ÉTAT GLOBAL
+    CONFIG & ÉTAT GLOBAL
 ===================================================== */
 const STORAGE_KEY = "expenses";
 const BUDGET_KEY = "budgetLimits";
 
-/* Mois sélectionné (YYYY-MM) */
-let selectedMonth = new Date().toISOString().slice(0, 7);
+// On utilise un objet Date pour naviguer facilement entre les mois
+let selectedDate = new Date(); 
 
 /* =====================================================
-   UTIL
+    UTILITAIRES
 ===================================================== */
 function isUserLogged() {
   return window.currentUser && window.currentUser.uid;
 }
 
-function todayISO() {
-  return new Date().toISOString().split("T")[0];
+function getMonthKey(date) {
+  // Retourne "YYYY-MM"
+  return date.toISOString().slice(0, 7);
 }
 
 /* =====================================================
-   LOCAL STORAGE
+    LOCAL STORAGE (AVEC BUDGETS PAR DÉFAUT)
 ===================================================== */
 function getExpenses() {
   return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
@@ -42,9 +40,19 @@ function saveExpenses(expenses) {
 }
 
 function getBudgets() {
-  return JSON.parse(
-    localStorage.getItem(BUDGET_KEY) || '{"global":0,"categories":{}}'
-  );
+  const saved = localStorage.getItem(BUDGET_KEY);
+  if (saved) {
+    return JSON.parse(saved);
+  } else {
+    // VALEURS PAR DÉFAUT SI VIDE
+    return {
+      global: 0,
+      categories: {
+        "Vêtements": 100,
+        "Autre": 100
+      }
+    };
+  }
 }
 
 function saveBudgets(budgets) {
@@ -52,43 +60,27 @@ function saveBudgets(budgets) {
 }
 
 /* =====================================================
-   FIREBASE – LOAD
+    FIREBASE – CHARGEMENT & SYNCHRO
 ===================================================== */
 async function loadFromCloud() {
   if (!isUserLogged()) return;
+  const uid = window.currentUser.uid;
 
   /* Dépenses */
-  const expRef = collection(db, "users", window.currentUser.uid, "expenses");
+  const expRef = collection(db, "users", uid, "expenses");
   const expSnap = await getDocs(expRef);
-  saveExpenses(expSnap.docs.map(d => d.data()));
+  const cloudData = expSnap.docs.map(d => d.data());
+  if (cloudData.length > 0) saveExpenses(cloudData);
 
   /* Budgets */
-  const userSnap = await getDoc(doc(db, "users", window.currentUser.uid));
+  const userSnap = await getDoc(doc(db, "users", uid));
   if (userSnap.exists() && userSnap.data().budgets) {
     saveBudgets(userSnap.data().budgets);
   }
 }
 
-/* =====================================================
-   FIREBASE – SYNC
-===================================================== */
-async function syncExpensesToCloud() {
-  if (!isUserLogged()) return;
-
-  const uid = window.currentUser.uid;
-  const expenses = getExpenses();
-
-  for (const e of expenses) {
-    await setDoc(
-      doc(db, "users", uid, "expenses", String(e.id)),
-      e
-    );
-  }
-}
-
 async function syncBudgetsToCloud() {
   if (!isUserLogged()) return;
-
   await setDoc(
     doc(db, "users", window.currentUser.uid),
     { budgets: getBudgets() },
@@ -97,101 +89,137 @@ async function syncBudgetsToCloud() {
 }
 
 /* =====================================================
-   CALCULS
+    NAVIGATION MOIS
 ===================================================== */
-function getMonthExpenses() {
-  return getExpenses().filter(e => e.date.startsWith(selectedMonth));
-}
-
-function getMonthTotal() {
-  return getMonthExpenses().reduce((s, e) => s + e.amount, 0);
-}
-
-function getCategoryMonthTotal(cat) {
-  return getMonthExpenses()
-    .filter(e => e.category === cat)
-    .reduce((s, e) => s + e.amount, 0);
+function updateMonthUI() {
+  const label = document.getElementById("current-month-label");
+  if (label) {
+    const options = { month: 'long', year: 'numeric' };
+    label.textContent = selectedDate.toLocaleDateString('fr-FR', options);
+  }
+  refreshUI();
 }
 
 /* =====================================================
-   ALERTES
+    ACTIONS (AJOUT, SUPPRESSION)
 ===================================================== */
-function applyBudgetAlerts() {
-  const budgets = getBudgets();
-  const el = document.getElementById("budget-month-total");
-  if (!el || budgets.global <= 0) return;
+async function addExpense() {
+  const amount = parseFloat(document.getElementById("amount")?.value);
+  const customDate = document.getElementById("expense-date")?.value; // Nouvelle date
+  if (!amount || amount <= 0) return;
 
-  const ratio = getMonthTotal() / budgets.global;
-  el.style.color =
-    ratio >= 1 ? "#e74c3c" :
-    ratio >= 0.8 ? "#f39c12" :
-    "";
-}
+  const expense = {
+    id: String(Date.now()),
+    amount,
+    category: document.getElementById("category")?.value || "Autre",
+    note: document.getElementById("note")?.value || "",
+    date: customDate || new Date().toISOString().split("T")[0]
+  };
 
-/* =====================================================
-   LISTE DÉPENSES
-===================================================== */
-function renderExpenses() {
-  const list = document.getElementById("expense-list");
-  if (!list) return;
-
-  list.innerHTML = "";
-
-  getMonthExpenses().slice().reverse().forEach(e => {
-    const li = document.createElement("li");
-    li.innerHTML = `
-      <strong>${e.amount.toFixed(2)} €</strong> – ${e.category}
-      <br><small>${e.date}${e.note ? " · " + e.note : ""}</small>
-    `;
-    list.appendChild(li);
-  });
-}
-
-/* =====================================================
-   WIDGET DASHBOARD
-===================================================== */
-function updateWidget() {
-  const todayEl = document.getElementById("budget-today-total");
-  const monthEl = document.getElementById("budget-month-total");
-  if (!todayEl || !monthEl) return;
-
-  const today = todayISO();
   const expenses = getExpenses();
+  expenses.push(expense);
+  saveExpenses(expenses);
 
-  const todayTotal = expenses
-    .filter(e => e.date === today)
-    .reduce((s, e) => s + e.amount, 0);
+  if (isUserLogged()) {
+    await setDoc(doc(db, "users", window.currentUser.uid, "expenses", expense.id), expense);
+  }
+  
+  // Reset formulaire
+  document.getElementById("amount").value = "";
+  document.getElementById("note").value = "";
+  
+  refreshUI();
+}
 
-  todayEl.textContent = todayTotal.toFixed(2) + " €";
-  monthEl.textContent = getMonthTotal().toFixed(2) + " €";
+async function deleteExpense(id) {
+  if (!confirm("Supprimer cette dépense ?")) return;
 
-  applyBudgetAlerts();
+  let expenses = getExpenses();
+  expenses = expenses.filter(e => e.id !== String(id));
+  saveExpenses(expenses);
+
+  if (isUserLogged()) {
+    await deleteDoc(doc(db, "users", window.currentUser.uid, "expenses", String(id)));
+  }
+  refreshUI();
 }
 
 /* =====================================================
-   BARRES DE BUDGET
+    RENDU UI (LISTE, WIDGET, BARRES)
 ===================================================== */
-function renderBudgetsUI() {
+function refreshUI() {
+  const currentMonthStr = getMonthKey(selectedDate);
+  const allExpenses = getExpenses();
+  const monthExpenses = allExpenses.filter(e => e.date.startsWith(currentMonthStr));
   const budgets = getBudgets();
-  const total = getMonthTotal();
 
-  const bar = document.getElementById("global-budget-bar");
-  const text = document.getElementById("global-budget-text");
+  // 1. Liste des dépenses (avec bouton supprimer)
+  const list = document.getElementById("expense-list");
+  if (list) {
+    list.innerHTML = "";
+    monthExpenses.slice().reverse().forEach(e => {
+      const li = document.createElement("li");
+      li.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+          <div>
+            <strong>${e.amount.toFixed(2)} €</strong> – ${e.category}
+            <br><small>${e.date}${e.note ? " · " + e.note : ""}</small>
+          </div>
+          <button class="delete-btn" data-id="${e.id}" style="background:none; border:none; color:#e74c3c; cursor:pointer; font-size:1.2rem;">&times;</button>
+        </div>
+      `;
+      list.appendChild(li);
+    });
 
-  if (bar && text && budgets.global > 0) {
-    const pct = Math.min(100, (total / budgets.global) * 100);
-    bar.style.width = pct + "%";
-    text.textContent = `${total.toFixed(2)} € / ${budgets.global} €`;
+    // Event listeners suppression
+    document.querySelectorAll(".delete-btn").forEach(btn => {
+      btn.onclick = () => deleteExpense(btn.dataset.id);
+    });
   }
 
+  // 2. Widget Dashboard (Totaux)
+  const todayTotal = allExpenses
+    .filter(e => e.date === new Date().toISOString().split("T")[0])
+    .reduce((s, e) => s + e.amount, 0);
+  
+  const monthTotal = monthExpenses.reduce((s, e) => s + e.amount, 0);
+
+  const todayEl = document.getElementById("budget-today-total");
+  const monthEl = document.getElementById("budget-month-total");
+  if (todayEl) todayEl.textContent = todayTotal.toFixed(2) + " €";
+  if (monthEl) {
+    monthEl.textContent = monthTotal.toFixed(2) + " €";
+    // Alertes couleurs
+    if (budgets.global > 0) {
+      const ratio = monthTotal / budgets.global;
+      monthEl.style.color = ratio >= 1 ? "#e74c3c" : ratio >= 0.8 ? "#f39c12" : "";
+    }
+  }
+
+  // 3. Barres de Budget
+  const bar = document.getElementById("global-budget-bar");
+  const text = document.getElementById("global-budget-text");
+  if (bar && text && budgets.global > 0) {
+    const pct = Math.min(100, (monthTotal / budgets.global) * 100);
+    bar.style.width = pct + "%";
+    text.textContent = `${monthTotal.toFixed(2)} € / ${budgets.global} €`;
+  }
+
+  renderCategoryBudgets(monthExpenses, budgets);
+  renderCharts(monthExpenses);
+}
+
+function renderCategoryBudgets(monthExpenses, budgets) {
   const container = document.getElementById("category-budgets");
   if (!container) return;
   container.innerHTML = "";
 
   Object.entries(budgets.categories).forEach(([cat, limit]) => {
-    const spent = getCategoryMonthTotal(cat);
+    const spent = monthExpenses
+      .filter(e => e.category === cat)
+      .reduce((s, e) => s + e.amount, 0);
+    
     if (limit === 0 && spent === 0) return;
-
     const pct = limit > 0 ? Math.min(100, (spent / limit) * 100) : 0;
 
     const div = document.createElement("div");
@@ -206,35 +234,44 @@ function renderBudgetsUI() {
 }
 
 /* =====================================================
-   GRAPHIQUES
+    GRAPHIQUES (CHART.JS)
 ===================================================== */
 let monthChart = null;
 let catChart = null;
 
-function renderCharts() {
+function renderCharts(monthExpenses) {
   if (typeof Chart === "undefined") return;
 
   const monthCanvas = document.getElementById("chart-month");
   const catCanvas = document.getElementById("chart-categories");
   if (!monthCanvas || !catCanvas) return;
 
+  // Données par jour
   const map = {};
-  getMonthExpenses().forEach(e => {
+  monthExpenses.forEach(e => {
     map[e.date] = (map[e.date] || 0) + e.amount;
   });
+  const sortedDates = Object.keys(map).sort();
 
   if (monthChart) monthChart.destroy();
   monthChart = new Chart(monthCanvas, {
     type: "line",
     data: {
-      labels: Object.keys(map).map(d => d.slice(8)),
-      datasets: [{ data: Object.values(map), fill: true, tension: 0.3 }]
+      labels: sortedDates.map(d => d.slice(8)),
+      datasets: [{ 
+        label: 'Dépenses',
+        data: sortedDates.map(d => map[d]), 
+        borderColor: '#007ACC',
+        fill: true, 
+        tension: 0.3 
+      }]
     },
     options: { plugins: { legend: { display: false } } }
   });
 
+  // Données par catégorie
   const catMap = {};
-  getMonthExpenses().forEach(e => {
+  monthExpenses.forEach(e => {
     catMap[e.category] = (catMap[e.category] || 0) + e.amount;
   });
 
@@ -243,80 +280,77 @@ function renderCharts() {
     type: "doughnut",
     data: {
       labels: Object.keys(catMap),
-      datasets: [{ data: Object.values(catMap) }]
+      datasets: [{ 
+        data: Object.values(catMap),
+        backgroundColor: ['#3498db', '#e74c3c', '#2ecc71', '#f1c40f', '#9b59b6', '#34495e']
+      }]
     }
   });
 }
 
 /* =====================================================
-   ACTIONS
+    LOGIQUE MENU & PROFIL (HARMONISÉE)
 ===================================================== */
-async function addExpense() {
-  const amount = parseFloat(document.getElementById("amount")?.value);
-  if (!amount || amount <= 0) return;
+function updateAuthUI(user) {
+  const info = document.getElementById("user-info");
+  const guest = document.getElementById("user-guest");
+  const status = document.getElementById("user-status");
+  const name = document.getElementById("user-name");
 
-  const expense = {
-    id: Date.now(),
-    amount,
-    category: document.getElementById("category")?.value || "Autre",
-    note: document.getElementById("note")?.value || "",
-    date: todayISO()
-  };
-
-  const expenses = getExpenses();
-  expenses.push(expense);
-  saveExpenses(expenses);
-
-  await syncExpensesToCloud();
-  refreshUI();
-}
-
-async function saveGlobalBudget() {
-  const val = parseFloat(document.getElementById("budget-global")?.value) || 0;
-  const budgets = getBudgets();
-  budgets.global = val;
-  saveBudgets(budgets);
-  await syncBudgetsToCloud();
-  renderBudgetsUI();
-}
-
-async function saveCategoryBudget() {
-  const cat = document.getElementById("budget-category")?.value;
-  const val = parseFloat(document.getElementById("budget-category-amount")?.value) || 0;
-  if (!cat) return;
-
-  const budgets = getBudgets();
-  budgets.categories[cat] = val;
-  saveBudgets(budgets);
-  await syncBudgetsToCloud();
-  renderBudgetsUI();
+  if (user) {
+    if (status) status.style.display = "none";
+    if (guest) guest.style.display = "none";
+    if (info) info.style.display = "block";
+    if (name) name.textContent = user.displayName || user.email;
+  } else {
+    if (status) status.textContent = "Mode Local";
+    if (guest) guest.style.display = "block";
+    if (info) info.style.display = "none";
+  }
 }
 
 /* =====================================================
-   INIT
+    INIT
 ===================================================== */
-function refreshUI() {
-  renderExpenses();
-  updateWidget();
-  renderBudgetsUI();
-  renderCharts();
-}
-
-// On écoute le signal de auth.js
-window.addEventListener("user-ready", async () => {
-  if (isUserLogged()) {
-    await loadFromCloud();
-    refreshUI();
-  }
+onAuthStateChanged(auth, async user => {
+  window.currentUser = user;
+  updateAuthUI(user);
+  if (user) await loadFromCloud();
+  updateMonthUI(); // Lance le premier refresh
 });
 
 document.addEventListener("DOMContentLoaded", () => {
-  // Si l'utilisateur est déjà reconnu immédiatement
-  if (isUserLogged()) {
-    loadFromCloud().then(refreshUI);
-  }
+  // Navigation mois
+  document.getElementById("prev-month")?.addEventListener("click", () => {
+    selectedDate.setMonth(selectedDate.getMonth() - 1);
+    updateMonthUI();
+  });
+  document.getElementById("next-month")?.addEventListener("click", () => {
+    selectedDate.setMonth(selectedDate.getMonth() + 1);
+    updateMonthUI();
+  });
 
+  // Actions
   document.getElementById("add-expense")?.addEventListener("click", addExpense);
-  document.getElementById("save-budget-global")?.addEventListener("click", saveGlobalBudget);
-  document.getElementById("save-budget-category")?.addEventListener("click", saveCategoryBudget);
+  document.getElementById("btn-logout")?.addEventListener("click", logout);
+
+  document.getElementById("save-budget-global")?.addEventListener("click", async () => {
+    const val = parseFloat(document.getElementById("budget-global")?.value) || 0;
+    const budgets = getBudgets();
+    budgets.global = val;
+    saveBudgets(budgets);
+    await syncBudgetsToCloud();
+    refreshUI();
+  });
+
+  document.getElementById("save-budget-category")?.addEventListener("click", async () => {
+    const cat = document.getElementById("budget-category")?.value;
+    const val = parseFloat(document.getElementById("budget-category-amount")?.value) || 0;
+    if (!cat) return;
+    const budgets = getBudgets();
+    budgets.categories[cat] = val;
+    saveBudgets(budgets);
+    await syncBudgetsToCloud();
+    refreshUI();
+  });
 });
