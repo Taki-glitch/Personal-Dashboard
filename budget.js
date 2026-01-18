@@ -1,21 +1,13 @@
 /* =====================================================
-   FIREBASE (API MODULAIRE v10)
-===================================================== */
-import { db } from "./auth.js";
-import {
-  collection,
-  doc,
-  getDocs,
-  getDoc,
-  setDoc
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-/* =====================================================
-   CONFIG & ÉTAT UTILISATEUR
+   CONFIG & ÉTAT GLOBAL
 ===================================================== */
 const STORAGE_KEY = "expenses";
 const BUDGET_KEY = "budgetLimits";
 
+/* mois sélectionné (YYYY-MM) */
+let selectedMonth = new Date().toISOString().slice(0, 7);
+
+/* auth.js fournit window.currentUser */
 function isUserLogged() {
   return window.currentUser && window.currentUser.uid;
 }
@@ -42,63 +34,40 @@ function saveBudgets(budgets) {
 }
 
 /* =====================================================
-   UTILITAIRES DATE
+   DATES
 ===================================================== */
 function todayISO() {
   return new Date().toISOString().split("T")[0];
 }
 
-function currentMonth() {
-  return todayISO().slice(0, 7);
-}
-
 /* =====================================================
-   FIREBASE – DÉPENSES
+   FIREBASE – CHARGEMENT
 ===================================================== */
-async function loadExpensesFromCloud() {
-  if (!isUserLogged()) return;
+async function loadFromCloud() {
+  if (!isUserLogged() || typeof firebase === "undefined") return;
 
-  const ref = collection(db, "users", window.currentUser.uid, "expenses");
-  const snap = await getDocs(ref);
-
-  const expenses = snap.docs.map(d => d.data());
-  saveExpenses(expenses);
-}
-
-async function syncExpensesToCloud() {
-  if (!isUserLogged()) return;
-
-  const expenses = getExpenses();
+  const db = firebase.firestore();
   const uid = window.currentUser.uid;
 
-  for (const e of expenses) {
-    await setDoc(
-      doc(db, "users", uid, "expenses", String(e.id)),
-      e
-    );
-  }
+  const snap = await db.collection("users").doc(uid).get();
+  if (!snap.exists) return;
+
+  const data = snap.data();
+  if (Array.isArray(data.expenses)) saveExpenses(data.expenses);
+  if (data.budgets) saveBudgets(data.budgets);
 }
 
-/* =====================================================
-   FIREBASE – BUDGETS
-===================================================== */
-async function loadBudgetsFromCloud() {
-  if (!isUserLogged()) return;
+async function syncToCloud() {
+  if (!isUserLogged() || typeof firebase === "undefined") return;
 
-  const ref = doc(db, "users", window.currentUser.uid);
-  const snap = await getDoc(ref);
+  const db = firebase.firestore();
+  const uid = window.currentUser.uid;
 
-  if (snap.exists() && snap.data().budgets) {
-    saveBudgets(snap.data().budgets);
-  }
-}
-
-async function syncBudgetsToCloud() {
-  if (!isUserLogged()) return;
-
-  await setDoc(
-    doc(db, "users", window.currentUser.uid),
-    { budgets: getBudgets() },
+  await db.collection("users").doc(uid).set(
+    {
+      expenses: getExpenses(),
+      budgets: getBudgets()
+    },
     { merge: true }
   );
 }
@@ -106,25 +75,26 @@ async function syncBudgetsToCloud() {
 /* =====================================================
    CALCULS
 ===================================================== */
+function getMonthExpenses() {
+  return getExpenses().filter(e => e.date.startsWith(selectedMonth));
+}
+
 function getMonthTotal() {
-  return getExpenses()
-    .filter(e => e.date.startsWith(currentMonth()))
-    .reduce((s, e) => s + e.amount, 0);
+  return getMonthExpenses().reduce((s, e) => s + e.amount, 0);
 }
 
 function getCategoryMonthTotal(category) {
-  return getExpenses()
-    .filter(e => e.date.startsWith(currentMonth()) && e.category === category)
+  return getMonthExpenses()
+    .filter(e => e.category === category)
     .reduce((s, e) => s + e.amount, 0);
 }
 
 /* =====================================================
-   UI – ALERTES
+   ALERTES BUDGET
 ===================================================== */
 function applyBudgetAlerts() {
   const budgets = getBudgets();
   const el = document.getElementById("budget-month-total");
-
   if (!el || budgets.global <= 0) return;
 
   const ratio = getMonthTotal() / budgets.global;
@@ -136,7 +106,7 @@ function applyBudgetAlerts() {
 }
 
 /* =====================================================
-   UI – LISTE DÉPENSES
+   LISTE DÉPENSES
 ===================================================== */
 function renderExpenses() {
   const list = document.getElementById("expense-list");
@@ -144,7 +114,7 @@ function renderExpenses() {
 
   list.innerHTML = "";
 
-  getExpenses()
+  getMonthExpenses()
     .slice()
     .reverse()
     .forEach(e => {
@@ -160,34 +130,28 @@ function renderExpenses() {
 }
 
 /* =====================================================
-   UI – WIDGET
+   WIDGET DASHBOARD
 ===================================================== */
 function updateWidget() {
   const todayEl = document.getElementById("budget-today-total");
   const monthEl = document.getElementById("budget-month-total");
-
   if (!todayEl || !monthEl) return;
 
   const expenses = getExpenses();
   const today = todayISO();
-  const month = currentMonth();
 
   const todayTotal = expenses
     .filter(e => e.date === today)
     .reduce((s, e) => s + e.amount, 0);
 
-  const monthTotal = expenses
-    .filter(e => e.date.startsWith(month))
-    .reduce((s, e) => s + e.amount, 0);
-
   todayEl.textContent = todayTotal.toFixed(2) + " €";
-  monthEl.textContent = monthTotal.toFixed(2) + " €";
+  monthEl.textContent = getMonthTotal().toFixed(2) + " €";
 
   applyBudgetAlerts();
 }
 
 /* =====================================================
-   UI – BARRES DE BUDGET
+   BARRES DE BUDGET
 ===================================================== */
 function renderBudgetsUI() {
   const budgets = getBudgets();
@@ -211,18 +175,11 @@ function renderBudgetsUI() {
 
   container.innerHTML = "";
 
-  const expenses = getExpenses();
-  const categories = new Set(expenses.map(e => e.category));
+  Object.entries(budgets.categories).forEach(([cat, limit]) => {
+    if (limit <= 0) return;
 
-  Object.keys(budgets.categories).forEach(c => categories.add(c));
-
-  categories.forEach(cat => {
-    const limit = budgets.categories[cat] || 0;
     const total = getCategoryMonthTotal(cat);
-
-    if (total === 0 && limit === 0) return;
-
-    const pct = limit > 0 ? Math.min(100, (total / limit) * 100) : 0;
+    const pct = Math.min(100, (total / limit) * 100);
 
     const div = document.createElement("div");
     div.className = "budget-block";
@@ -231,90 +188,58 @@ function renderBudgetsUI() {
       <div class="budget-bar">
         <div style="width:${pct}%"></div>
       </div>
-      <small>${total.toFixed(2)} € ${limit > 0 ? "/ " + limit + " €" : "(sans budget)"}</small>
+      <small>${total.toFixed(2)} € / ${limit} €</small>
     `;
 
     const bar = div.querySelector(".budget-bar > div");
-    if (limit > 0) {
-      if (pct >= 90) bar.classList.add("budget-danger", "sprint-alert");
-      else if (pct >= 70) bar.classList.add("budget-warning");
-    }
+    if (pct >= 90) bar.classList.add("budget-danger", "sprint-alert");
+    else if (pct >= 70) bar.classList.add("budget-warning");
 
     container.appendChild(div);
   });
 }
 
 /* =====================================================
-   GRAPHIQUES (Chart.js)
+   GRAPHIQUES
 ===================================================== */
 let monthChart = null;
 let categoryChart = null;
-
-function getMonthDailyTotals() {
-  const map = {};
-  const month = currentMonth();
-
-  getExpenses()
-    .filter(e => e.date.startsWith(month))
-    .forEach(e => {
-      map[e.date] = (map[e.date] || 0) + e.amount;
-    });
-
-  const days = Object.keys(map).sort();
-  return {
-    labels: days.map(d => d.slice(8)),
-    values: days.map(d => map[d])
-  };
-}
-
-function getCategoryTotals() {
-  const map = {};
-
-  getExpenses()
-    .filter(e => e.date.startsWith(currentMonth()))
-    .forEach(e => {
-      map[e.category] = (map[e.category] || 0) + e.amount;
-    });
-
-  return {
-    labels: Object.keys(map),
-    values: Object.values(map)
-  };
-}
 
 function renderCharts() {
   if (typeof Chart === "undefined") return;
 
   const monthCanvas = document.getElementById("chart-month");
   const catCanvas = document.getElementById("chart-categories");
-
   if (!monthCanvas || !catCanvas) return;
 
-  const monthData = getMonthDailyTotals();
-  if (monthChart) monthChart.destroy();
+  const dailyMap = {};
+  getMonthExpenses().forEach(e => {
+    dailyMap[e.date] = (dailyMap[e.date] || 0) + e.amount;
+  });
 
+  const days = Object.keys(dailyMap).sort();
+
+  if (monthChart) monthChart.destroy();
   monthChart = new Chart(monthCanvas, {
     type: "line",
     data: {
-      labels: monthData.labels,
-      datasets: [{
-        label: "€ / jour",
-        data: monthData.values,
-        tension: 0.3,
-        fill: true
-      }]
+      labels: days.map(d => d.slice(8)),
+      datasets: [{ data: days.map(d => dailyMap[d]), fill: true, tension: 0.3 }]
     },
     options: { responsive: true, plugins: { legend: { display: false } } }
   });
 
-  const catData = getCategoryTotals();
-  if (categoryChart) categoryChart.destroy();
+  const catMap = {};
+  getMonthExpenses().forEach(e => {
+    catMap[e.category] = (catMap[e.category] || 0) + e.amount;
+  });
 
+  if (categoryChart) categoryChart.destroy();
   categoryChart = new Chart(catCanvas, {
     type: "doughnut",
     data: {
-      labels: catData.labels,
-      datasets: [{ data: catData.values }]
+      labels: Object.keys(catMap),
+      datasets: [{ data: Object.values(catMap) }]
     },
     options: { responsive: true }
   });
@@ -343,11 +268,9 @@ async function addExpense() {
   saveExpenses(expenses);
 
   amountInput.value = "";
-   
-  const noteInput = document.getElementById("note");
-      if (noteInput) noteInput.value = "";
+  if (document.getElementById("note")) document.getElementById("note").value = "";
 
-  await syncExpensesToCloud();
+  await syncToCloud();
 
   renderExpenses();
   updateWidget();
@@ -363,7 +286,7 @@ async function saveGlobalBudget() {
   budgets.global = parseFloat(input.value) || 0;
   saveBudgets(budgets);
 
-  await syncBudgetsToCloud();
+  await syncToCloud();
   renderBudgetsUI();
 }
 
@@ -376,25 +299,33 @@ async function saveCategoryBudget() {
   budgets.categories[catInput.value] = parseFloat(valInput.value) || 0;
   saveBudgets(budgets);
 
-  await syncBudgetsToCloud();
+  await syncToCloud();
   renderBudgetsUI();
 }
 
 /* =====================================================
-   INIT
+   INIT SÉCURISÉ
 ===================================================== */
-document.addEventListener("DOMContentLoaded", async () => {
+document.addEventListener("DOMContentLoaded", () => {
   if (isUserLogged()) {
-    await loadExpensesFromCloud();
-    await loadBudgetsFromCloud();
+    loadFromCloud().then(refreshUI);
+  } else {
+    refreshUI();
   }
+});
 
-  document.getElementById("add-expense")?.addEventListener("click", addExpense);
-  document.getElementById("save-budget-global")?.addEventListener("click", saveGlobalBudget);
-  document.getElementById("save-budget-category")?.addEventListener("click", saveCategoryBudget);
+window.addEventListener("user-ready", async () => {
+  await loadFromCloud();
+  refreshUI();
+});
 
+function refreshUI() {
   renderExpenses();
   updateWidget();
   renderBudgetsUI();
   renderCharts();
-});
+
+  document.getElementById("add-expense")?.addEventListener("click", addExpense);
+  document.getElementById("save-budget-global")?.addEventListener("click", saveGlobalBudget);
+  document.getElementById("save-budget-category")?.addEventListener("click", saveCategoryBudget);
+}
