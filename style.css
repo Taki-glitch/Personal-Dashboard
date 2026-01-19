@@ -249,3 +249,82 @@ body.dark .budget-bar {
   background: #333;
 }
 
+/* ===== BOUTONS RESPONSIVE – BUDGET ===== */
+
+/* Boutons principaux */
+.btn-primary {
+  background: linear-gradient(135deg, #007ACC, #005A99);
+  padding: 14px 18px;
+  font-size: 1rem;
+  border-radius: 10px;
+  width: 100%;
+}
+
+/* Boutons secondaires */
+.btn-secondary {
+  background: #ecf0f1;
+  color: #007ACC;
+  border: 2px solid #007ACC;
+  padding: 14px 18px;
+  font-size: 0.95rem;
+  border-radius: 10px;
+  width: 100%;
+}
+
+.btn-secondary:hover {
+  background: #007ACC;
+  color: white;
+}
+
+/* Boutons navigation mois */
+.btn-circle {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  font-size: 1.2rem;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-nav {
+  background: #007ACC;
+}
+
+/* Largeur utilitaire */
+.full-width {
+  width: 100%;
+}
+
+/* Boutons suppression (liste dépenses) */
+.delete-btn {
+  min-width: 44px;
+  min-height: 44px;
+  font-size: 1.3rem;
+}
+
+/* ===== MOBILE FIRST ===== */
+@media (max-width: 600px) {
+  button {
+    font-size: 1rem;
+  }
+
+  .btn-circle {
+    width: 48px;
+    height: 48px;
+    font-size: 1.4rem;
+  }
+}
+
+/* ===== MODE SOMBRE ===== */
+body.dark .btn-secondary {
+  background: #2a2a2a;
+  color: #4da3ff;
+  border-color: #4da3ff;
+}
+
+body.dark .btn-secondary:hover {
+  background: #4da3ff;
+  color: #121212;
+}
