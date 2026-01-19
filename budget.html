@@ -42,13 +42,25 @@
   <section class="card">
     <h2>➕ Ajouter une dépense</h2>
     <input type="number" id="amount" placeholder="Montant (€)">
-    <input type="date" id="expense-date"> <select id="category" class="full-width">
-      <option value="Courses">🛒 Courses</option>
-      <option value="Logement">🏠 Logement</option>
-      <option value="Vêtements">👕 Vêtements</option>
-      <option value="Loisirs">🎮 Loisirs</option>
-      <option value="Autre">📦 Autre</option>
-    </select>
+    <div class="form-row">
+  		<input
+    		type="date"
+    		id="expense-date"
+    		class="input-styled"
+  		>
+
+  		<select
+    		id="category"
+    		class="input-styled"
+  		>
+    		<option value="Courses">🛒 Courses</option>
+    		<option value="Logement">🏠 Logement</option>
+    		<option value="Vêtements">👕 Vêtements</option>
+    		<option value="Loisirs">🎮 Loisirs</option>
+    		<option value="Autre">📦 Autre</option>
+  		</select>
+	</div>
+
     <input type="text" id="note" placeholder="Note (optionnel)">
     <button id="add-expense" class="btn-primary full-width">
   		➕ Ajouter la dépense
