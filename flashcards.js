@@ -365,15 +365,37 @@ function updateChart() {
     INIT DOM & EVENTS
 ===================================== */
 document.addEventListener("DOMContentLoaded", () => {
-    // Menu & Thème (Fonctions de base)
+    // Menu & Thème (CORRIGÉ POUR CORRESPONDRE À TON CSS/INDEX)
     const menuBtn = document.getElementById("menu-btn");
     const sideMenu = document.getElementById("side-menu");
     const overlay = document.getElementById("overlay");
-    if(menuBtn) menuBtn.onclick = () => { sideMenu.classList.add("open"); overlay.classList.add("show"); };
-    if(overlay) overlay.onclick = () => { sideMenu.classList.remove("open"); overlay.classList.remove("show"); };
+    const closeMenu = document.getElementById("close-menu"); // Ajout du bouton fermer
 
+    if(menuBtn && sideMenu && overlay) { 
+        menuBtn.onclick = () => { 
+            sideMenu.classList.add("open"); 
+            overlay.classList.add("show"); 
+        }; 
+    }
+
+    // Fonction pour fermer
+    const closeFn = () => { 
+        if(sideMenu) sideMenu.classList.remove("open"); 
+        if(overlay) overlay.classList.remove("show"); 
+    };
+
+    if(overlay) overlay.onclick = closeFn;
+    if(closeMenu) closeMenu.onclick = closeFn;
+
+    // Gestion du thème
     const toggleThemeBtn = document.getElementById("toggle-theme");
     if(toggleThemeBtn) {
+        // Appliquer le thème au chargement
+        if (localStorage.getItem("theme") === "dark") {
+            document.body.classList.add("dark");
+            toggleThemeBtn.textContent = "☀️";
+        }
+
         toggleThemeBtn.onclick = () => {
             const isDark = document.body.classList.toggle("dark");
             localStorage.setItem("theme", isDark ? "dark" : "light");
@@ -452,4 +474,31 @@ document.addEventListener("DOMContentLoaded", () => {
     loadFlashcards().then(() => {
         displayFlashcards(); updateStats(); updateFilters(); updateChart();
     });
+});
+
+/* =====================================
+    GESTION DE L'INTERFACE UTILISATEUR (AUTH)
+===================================== */
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+onAuthStateChanged(auth, (user) => {
+    const status = document.getElementById("user-status");
+    const info = document.getElementById("user-info");
+    const guest = document.getElementById("user-guest");
+    const name = document.getElementById("user-name");
+
+    if (!status) return; // Sécurité si les éléments ne sont pas trouvés
+
+    if (user) {
+        // Utilisateur connecté
+        status.style.display = "none";
+        if (guest) guest.style.display = "none";
+        if (info) info.style.display = "block";
+        if (name) name.textContent = user.displayName || user.email;
+    } else {
+        // Mode local / déconnecté
+        if (info) info.style.display = "none";
+        if (guest) guest.style.display = "block";
+        status.style.display = "none";
+    }
 });
