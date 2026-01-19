@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flashcards – Russe</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<button id="toggle-theme" aria-label="Changer le thème">🌙</button>
+
+<button id="menu-btn" aria-label="Ouvrir le menu">☰</button>
+
+<nav id="side-menu">
+  <button id="close-menu" aria-label="Fermer le menu">✕</button>
+  <ul>
+    <li><a href="index.html">📊 Dashboard</a></li>
+    <li><a href="flashcards.html" class="active">🧠 Flashcards</a></li>
+    <li><a href="budget.html">💰 Budget</a></li>
+  </ul>
+</nav>
+
+<div id="overlay"></div>
+
+<header>
+  <h1>📚 Flashcards</h1>
+  <p>Apprentissage par répétition espacée (SRS)</p>
+</header>
+  
+<main>
+  <section class="card">
+    <h2>📊 Statistiques</h2>
+    <ul id="stats">
+      <li>📚 Total : <strong id="stat-total">0</strong></li>
+      <li>🆕 Nouveaux : <strong id="stat-new">0</strong></li>
+      <li>🔁 À revoir : <strong id="stat-review">0</strong></li>
+      <li>⭐ Maîtrisés : <strong id="stat-known">0</strong></li>
+      <li>📈 Réussite : <strong id="stat-success">0%</strong></li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2>🧠 Session de Révision</h2>
+
+    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+        <select id="reviewLangFilter" style="flex: 1; padding: 8px; border-radius: 5px;">
+            <option value="all">Toutes les langues</option>
+        </select>
+        <select id="reviewTagFilter" style="flex: 1; padding: 8px; border-radius: 5px;">
+            <option value="all">Tous les tags</option>
+        </select>
+    </div>
+    
+    <div id="reviewCard">
+      <p>Cliquez sur "Démarrer" pour commencer la révision</p>
+    </div>
+    
+    <div id="reviewActions">
+      <button id="startReview">🚀 Démarrer la session</button>
+      
+      <button id="showAnswer" style="display:none;">👁️ Voir la réponse</button>
+      <button id="know" style="display:none;">✅ Je savais</button>
+      <button id="dontKnow" style="display:none;">❌ Pas encore</button>
+      <button id="hard" style="display:none;">⚠️ Difficile</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>➕ Ajouter une flashcard</h2>
+    <div class="input-group">
+      <input type="text" id="cardLang" placeholder="Langue (ex: Espagnol, Anglais...)" list="existingLangs">
+      <datalist id="existingLangs">
+        </datalist>
+
+      <input type="text" id="frontSide" placeholder="Recto (Mot original)">
+      <input type="text" id="backSide" placeholder="Verso (Traduction)">
+      <input type="text" id="tag" placeholder="Tags (ex: verbe, voyage)">
+      <button id="addFlashcard">Ajouter</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>📋 Mes flashcards</h2>
+    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+      <select id="langFilter" style="flex: 1; padding: 10px; border-radius: 8px;">
+          <option value="all">Toutes les langues</option>
+      </select>
+      <select id="tagFilter" style="flex: 1; padding: 10px; border-radius: 8px;">
+          <option value="all">Tous les tags</option>
+      </select>
+    </div>
+    <ul id="flashcardsList"></ul>
+  </section>
+  
+  <section class="card" id="performanceDashboard">
+    <h2>📊 Performance & Suggestions</h2>
+    <div id="dashboardStats">
+      <p id="todayRevised">Cartes révisées aujourd'hui : 0</p>
+      <p id="todaySuccess">Réussites : 0 / Échecs : 0</p>
+    </div>
+    <div id="priorityCards">
+      <h3>📅 À réviser demain :</h3>
+      <ul id="priorityList"></ul>
+    </div>
+    <div id="tagProgress">
+      <h3>📈 Progrès par catégorie :</h3>
+      <ul id="tagList"></ul>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>📈 Progression quotidienne</h2>
+    <canvas id="progressChart" width="400" height="200"></canvas>
+  </section>
+
+  <section class="card">
+    <h2>💾 Gestion des données</h2>
+    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <button id="exportFlashcards">Exporter JSON</button>
+        <button id="btnImportFlashcards">Importer JSON</button>
+        <input type="file" id="importFlashcards" accept=".json" style="display:none;">
+        <button id="clearFlashcards" style="background-color: #e74c3c;">Tout supprimer</button>
+    </div>
+  </section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="config.js"></script>
+<script type="module" src="flashcards.js"></script>
+
+</body>
+</html>
