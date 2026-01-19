@@ -14,6 +14,17 @@
 
 <nav id="side-menu">
   <button id="close-menu" aria-label="Fermer le menu">✕</button>
+  
+  <div id="user-profile" style="padding: 20px; border-bottom: 1px solid #eee; text-align: center;">
+      <p id="user-status" style="font-size: 0.9rem; color: gray; margin-bottom: 10px;">Chargement...</p>
+      <div id="user-info" style="display: none;">
+          <strong id="user-name" style="display: block; margin-bottom: 10px; font-size: 1rem; color: #333;">Utilisateur</strong>
+          </div>
+      <div id="user-guest" style="display: none;">
+          <a href="login.html" style="text-decoration: none; color: #007ACC; font-weight: bold;">Se connecter</a>
+      </div>
+  </div>
+
   <ul>
     <li><a href="index.html">📊 Dashboard</a></li>
     <li><a href="flashcards.html" class="active">🧠 Flashcards</a></li>
