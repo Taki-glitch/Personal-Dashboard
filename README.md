@@ -1,99 +1,77 @@
-Personal Dashboard
+# 🚀 Personal Dashboard
 
-Mon Dashboard Personnel est une application web personnalisée qui centralise vos outils et informations utiles au quotidien : météo, flux RSS, ToDo list, flashcards pour l’apprentissage, mot du jour, et plus encore. L’application fonctionne en mode local et se synchronise avec Firebase pour un stockage cloud sécurisé.
+Un tableau de bord personnel tout-en-un conçu pour centraliser l'organisation quotidienne, l'apprentissage de langues et la gestion financière. 
 
-# Fonctionnalités
-1. Authentification
-Connexion avec Google ou email/mot de passe.
-Gestion du mode local pour les utilisateurs non connectés.
-Synchronisation automatique des données vers le cloud Firebase.
+## ✨ Fonctionnalités
 
-2. Thème
-Mode clair et mode sombre.
-Changement de thème instantané avec persistance dans le cloud.
+### 🏠 Dashboard Central
+- **Météo en direct** : Intégration avec l'API OpenWeather.
+- **Gestion de tâches** : Liste de choses à faire simple et efficace.
+- **Lecteur RSS** : Ajoutez vos sources préférées pour rester informé.
+- **Horloge Dynamique** : Affichage de l'heure en temps réel.
 
-3. ToDo List
-Ajouter, supprimer et gérer vos tâches.
-Synchronisation cloud si connecté.
+### 🧠 Apprentissage (Flashcards)
+- **Système SRS** : Algorithme de répétition espacée pour optimiser la mémorisation.
+- **Statistiques de progression** : Visualisation de votre apprentissage via des graphiques.
+- **Import/Export JSON** : Sauvegardez ou partagez vos listes de vocabulaire facilement.
 
-4. Météo
-Prévisions horaires pour aujourd’hui et demain.
-Basé sur l’API OpenWeatherMap.
+### 💰 Gestion de Budget
+- **Suivi des dépenses** : Enregistrez vos transactions par catégorie.
+- **Limites budgétaires** : Définissez des objectifs mensuels et suivez vos dépassements.
+- **Historique** : Naviguez entre les mois pour analyser vos habitudes de consommation.
 
-5. Flux RSS
-Ajouter et gérer vos sources RSS personnalisées.
-Lecture des 3 derniers articles de chaque flux.
-Marquage des articles lus.
+### 🔐 Authentification & Synchro
+- **Firebase Auth** : Connexion via Google ou Email.
+- **Mode Hybride** : Utilisation locale (LocalStorage) ou synchronisée sur le Cloud (Firestore).
+- **Thème Personnalisable** : Support complet du Mode Sombre (Dark Mode).
 
-6. Flashcards & Révisions (SRS)
-Création et gestion de flashcards pour l’apprentissage.
-Système de répétition espacée (Spaced Repetition System).
-Statistiques détaillées et graphique des performances.
-Widget sur la page d’accueil pour les révisions rapides.
-Filtrage par tags.
+## 🛠️ Technologies utilisées
 
-7. Mot du jour
-Affiche un mot russe quotidien avec sa traduction.
-Sélection basée sur le jour de l’année.
+- **Frontend** : HTML5, CSS3 (Variables, Flexbox, Grid), JavaScript (ES6+).
+- **Backend/Base de données** : Firebase Auth & Firestore.
+- **Visualisation** : Chart.js / Canvas API pour les graphiques.
+- **API** : OpenWeatherMap.
 
-8. Interface
-Menu latéral avec navigation entre le Dashboard et les Flashcards.
-UI responsive et agréable avec effets interactifs.
+## ⚙️ Configuration et Installation
 
-# Technologies utilisées
-HTML5, CSS3, JavaScript (ES6 modules)
-Firebase Authentication & Firestore pour la gestion des utilisateurs et la synchronisation cloud.
-OpenWeatherMap API pour la météo.
-RSS2JSON pour la récupération des flux RSS.
-Chart.js pour les graphiques de révision.
+1. **Cloner le dépôt** :
+   ```bash
+   git clone [https://github.com/votre-utilisateur/personal-dashboard.git](https://github.com/votre-utilisateur/personal-dashboard.git)
+Configuration Firebase :
 
-# Installation
-1. Cloner le projet :
-git clone https://github.com/ton-utilisateur/personal-dashboard.git
+Créez un projet sur Firebase Console.
 
-2. Installer un serveur local (optionnel pour tests) :
-Avec Python 3
-python -m http.server 8000
+Activez Authentication (Google & Email) et Firestore Database.
 
-3. Ouvrir index.html dans un navigateur moderne.
+Créez un fichier auth.js (si non présent) et ajoutez votre configuration Firebase :
 
-4.Pour utiliser Firebase, créer un projet et remplacer les clés dans auth.js :
+JavaScript
+
 const firebaseConfig = {
   apiKey: "VOTRE_API_KEY",
-  authDomain: "VOTRE_AUTH_DOMAIN",
-  projectId: "VOTRE_PROJECT_ID",
-  storageBucket: "VOTRE_STORAGE_BUCKET",
-  messagingSenderId: "VOTRE_MESSAGING_SENDER_ID",
-  appId: "VOTRE_APP_ID"
+  authDomain: "VOTRE_PROJET.firebaseapp.com",
+  projectId: "VOTRE_PROJET",
+  // ... le reste de vos identifiants
 };
+Clé API Météo :
 
-# Usage
-- Connexion / Déconnexion : Boutons dans le menu latéral.
-- Changer le thème : Bouton 🌙/☀️ en haut à droite.
-- Ajouter une tâche : Section ToDo List.
-- Ajouter un flux RSS : Section Flux RSS avec nom et URL.
-- Réviser des flashcards : Section Flashcards → sélectionner un tag → démarrer la session.
-- Voir le mot du jour : Widget sur la page d’accueil.
+Obtenez une clé sur OpenWeatherMap.
 
-# Structure des fichiers
-📂 personal-dashboard/
-├─ index.html          # Page principale (Dashboard)
-├─ flashcards.html     # Gestion des flashcards
-├─ style.css           # Styles globaux et composants
-├─ script.js           # Logique du Dashboard
-├─ auth.js             # Authentification et synchronisation Firebase
-├─ flashcards.js       # Gestion des flashcards et SRS
-├─ list.json           # Liste de mots russes pour le mot du jour
-└─ README.md           # Documentation
+Modifiez la clé dans le fichier config.js.
 
-# Contribution
-Toutes les contributions sont les bienvenues !
-Fork le projet
-Créer une branche (git checkout -b feature/ma-fonctionnalité)
-Commit tes changements (git commit -m 'Ajout fonctionnalité X')
-Push ta branche (git push origin feature/ma-fonctionnalité)
-Ouvrir un Pull Request
+Lancement :
 
+Ouvrez simplement index.html avec une extension type "Live Server" sur VS Code.
 
-# Licence
-MIT License — voir le fichier LICENSE pour plus de détails.
+📂 Structure du projet
+index.html : Page d'accueil et widgets principaux.
+
+flashcards.html / flashcards.js : Système d'apprentissage.
+
+budget.html / budget.js : Interface de gestion financière.
+
+style.css : Design global et gestion du mode sombre.
+
+auth.js : Logique de connexion et synchronisation Firebase.
+
+📝 Note : Ce projet est en constante évolution. N'hésitez pas à proposer des Pull Requests !
