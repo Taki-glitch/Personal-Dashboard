@@ -320,6 +320,31 @@ onAuthStateChanged(auth, async user => {
 });
 
 document.addEventListener("DOMContentLoaded", () => {
+  // --- BLOC POUR LE MENU ---
+    const menuBtn = document.getElementById("menu-btn");
+    const sideMenu = document.getElementById("side-menu");
+    const closeMenu = document.getElementById("close-menu");
+
+    if (menuBtn && sideMenu) {
+        menuBtn.onclick = () => sideMenu.classList.add("open");
+    }
+    if (closeMenu && sideMenu) {
+        closeMenu.onclick = () => sideMenu.classList.remove("open");
+    }
+
+    // --- BLOC POUR LE MODE SOMBRE ---
+    const themeBtn = document.getElementById("toggle-theme");
+    if (themeBtn) {
+        themeBtn.onclick = () => {
+            document.body.classList.toggle("dark");
+            localStorage.setItem("theme", document.body.classList.contains("dark") ? "dark" : "light");
+        };
+    }
+    // Appliquer le thème sauvegardé au chargement
+    if (localStorage.getItem("theme") === "dark") {
+        document.body.classList.add("dark");
+    }
+    
   // Navigation mois
   document.getElementById("prev-month")?.addEventListener("click", () => {
     selectedDate.setMonth(selectedDate.getMonth() - 1);
