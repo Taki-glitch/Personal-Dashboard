@@ -328,3 +328,61 @@ body.dark .btn-secondary:hover {
   background: #4da3ff;
   color: #121212;
 }
+
+/* ===== INPUTS & SELECTS – STYLE BOUTON ===== */
+
+.form-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+/* Inputs stylisés comme des boutons */
+.input-styled {
+  flex: 1;
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: 2px solid #007ACC;
+  background: white;
+  font-size: 0.95rem;
+  font-weight: bold;
+  color: #007ACC;
+  cursor: pointer;
+}
+
+/* Placeholder & date icon */
+.input-styled::placeholder {
+  color: #007ACC;
+  opacity: 0.7;
+}
+
+/* Select arrow custom */
+.input-styled select {
+  appearance: none;
+}
+
+/* Focus */
+.input-styled:focus {
+  outline: none;
+  background: #f0f8ff;
+  box-shadow: 0 0 0 3px rgba(0,122,204,0.25);
+}
+
+/* ===== MOBILE ===== */
+@media (max-width: 600px) {
+  .form-row {
+    flex-direction: column;
+  }
+}
+
+/* ===== MODE SOMBRE ===== */
+body.dark .input-styled {
+  background: #2a2a2a;
+  border-color: #4da3ff;
+  color: #4da3ff;
+}
+
+body.dark .input-styled:focus {
+  background: #1e1e1e;
+}
+
