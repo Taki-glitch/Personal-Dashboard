@@ -54,7 +54,11 @@ async function loadFromCloud() {
 
         if (snap.exists()) {
             const data = snap.data();
+
+            // --- LES TÂCHES ---
             if (data.tasks) localStorage.setItem("tasks", JSON.stringify(data.tasks));
+
+            // --- LES FLUX RSS ---
             if (Array.isArray(data.rssFeeds) && data.rssFeeds.length > 0) {
                 localStorage.setItem("rssFeeds", JSON.stringify(data.rssFeeds));
             } else {
@@ -66,8 +70,15 @@ async function loadFromCloud() {
                 }
             }
 
+            // --- LES FLASHCARDS ---
             if (data.flashcards) localStorage.setItem("flashcards", JSON.stringify(data.flashcards));
             if (data.revisionLog) localStorage.setItem("revisionLog", JSON.stringify(data.revisionLog));
+
+            // --- LE BUDGET ---
+            if (data.expenses) localStorage.setItem("expenses", JSON.stringify(data.expenses));
+            if (data.budgetLimits) localStorage.setItem("budgetLimits", JSON.stringify(data.budgetLimits));
+
+            // --- LE THÈME ---
             if (data.theme) localStorage.setItem("theme", data.theme);
             
             renderAll();
@@ -92,12 +103,44 @@ function renderAll() {
     renderTasks();
     loadRSS();
     updateFlashcardWidget();
+    updateBudgetWidget();
     displayWordOfTheDay(); // Ajouté : Affiche le mot russe
     const theme = localStorage.getItem("theme") || "light";
     applyTheme(theme);
 }
 
 /* ==== 4. MODULES DE L'APPLICATION ==== */
+// --- BUDGET WIDGET (LIEN AVEC BUDGET.JS) ---
+function updateBudgetWidget() {
+    const monthTotalEl = document.getElementById("budget-month-total");
+    const todayTotalEl = document.getElementById("budget-today-total");
+    
+    if (!monthTotalEl || !todayTotalEl) return;
+
+    // Récupérer les dépenses depuis le localStorage (clé utilisée dans budget.js)
+    const expenses = JSON.parse(localStorage.getItem("expenses") || "[]");
+    
+    const now = new Date();
+    const currentMonthKey = now.toISOString().slice(0, 7); // "YYYY-MM"
+    const todayKey = now.toISOString().split("T")[0]; // "YYYY-MM-DD"
+
+    let totalMonth = 0;
+    let totalToday = 0;
+
+    expenses.forEach(exp => {
+        // exp.date est au format "YYYY-MM-DD"
+        if (exp.date.startsWith(currentMonthKey)) {
+            totalMonth += parseFloat(exp.amount) || 0;
+        }
+        if (exp.date === todayKey) {
+            totalToday += parseFloat(exp.amount) || 0;
+        }
+    });
+
+    // Affichage avec formatage
+    monthTotalEl.textContent = `${totalMonth.toFixed(2)} €`;
+    todayTotalEl.textContent = `${totalToday.toFixed(2)} €`;
+}
 
 // --- AJOUT : FONCTION MOT DU JOUR ---
 async function displayWordOfTheDay() {
