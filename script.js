@@ -17,63 +17,84 @@ onAuthStateChanged(auth, async (user) => {
     if (user) {
         console.log("Utilisateur connecté :", user.uid);
         await loadFromCloud();
-        
-        // --- AJOUT ICI ---
-        updateBudgetWidget(); // Met à jour le widget budget après chargement cloud
-        updateFlashcardWidget(); 
-        // ------------------
-        
+        updateFlashcardWidget(); // 🔥 FORCER recalcul après synchro
     } else {
         console.log("Mode Local actif");
         renderAll();
-        updateBudgetWidget(); // Fonctionne aussi en mode local
     }
 });
 
-/* ==== FONCTION AJOUTÉE POUR LE BUDGET ==== */
-function updateBudgetWidget() {
-    // Récupère les dépenses et les budgets (avec les mêmes clés que budget.js)
-    const expenses = JSON.parse(localStorage.getItem("expenses") || "[]");
-    const budgets = JSON.parse(localStorage.getItem("budgetLimits") || '{"global":0,"categories":{}}');
-    
-    const today = new Date().toISOString().split('T')[0];
-    const thisMonth = today.slice(0, 7);
+function updateUserUI(user) {
+    const status = document.getElementById("user-status");
+    const info = document.getElementById("user-info");
+    const guest = document.getElementById("user-guest");
+    const name = document.getElementById("user-name");
+    const logoutBtn = document.getElementById("btn-logout");
 
-    // Calcul du total du jour
-    const todayTotal = expenses
-        .filter(e => e.date === today)
-        .reduce((s, e) => s + e.amount, 0);
+    if (!status) return;
 
-    // Calcul du total du mois
-    const monthTotal = expenses
-        .filter(e => e.date.startsWith(thisMonth))
-        .reduce((s, e) => s + e.amount, 0);
-
-    const todayEl = document.getElementById("budget-today-total");
-    const monthEl = document.getElementById("budget-month-total");
-
-    if (todayEl) todayEl.textContent = todayTotal.toFixed(2) + " €";
-    if (monthEl) {
-        monthEl.textContent = monthTotal.toFixed(2) + " €";
-        
-        // Alerte couleur si le budget global est dépassé
-        if (budgets.global > 0 && monthTotal >= budgets.global) {
-            monthEl.style.color = "#e74c3c"; // Rouge
-        } else if (budgets.global > 0 && monthTotal >= budgets.global * 0.8) {
-            monthEl.style.color = "#f39c12"; // Orange (80%)
-        } else {
-            monthEl.style.color = ""; // Couleur normale
-        }
+    if (user) {
+        status.style.display = "none";
+        guest.style.display = "none";
+        info.style.display = "block";
+        if (name) name.textContent = user.displayName || user.email;
+        if (logoutBtn) logoutBtn.onclick = () => logout();
+    } else {
+        status.textContent = "Mode Local";
+        status.style.display = "block";
+        guest.style.display = "block";
+        info.style.display = "none";
     }
 }
 
-/* ==== 3. FONCTIONS DE RENDU (EXISTANTES) ==== */
+async function loadFromCloud() {
+    try {
+        const ref = doc(db, "users", currentUser.uid);
+        const snap = await getDoc(ref);
+
+        if (snap.exists()) {
+            const data = snap.data();
+            if (data.tasks) localStorage.setItem("tasks", JSON.stringify(data.tasks));
+            if (Array.isArray(data.rssFeeds) && data.rssFeeds.length > 0) {
+                localStorage.setItem("rssFeeds", JSON.stringify(data.rssFeeds));
+            } else {
+            // 🔁 fallback si cloud vide
+                if (!localStorage.getItem("rssFeeds")) {
+                    localStorage.setItem("rssFeeds", JSON.stringify([
+                        { name: "Le Monde", url: "https://www.lemonde.fr/rss/une.xml" }
+                    ]));
+                }
+            }
+
+            if (data.flashcards) localStorage.setItem("flashcards", JSON.stringify(data.flashcards));
+            if (data.revisionLog) localStorage.setItem("revisionLog", JSON.stringify(data.revisionLog));
+            if (data.theme) localStorage.setItem("theme", data.theme);
+            
+            renderAll();
+        }
+    } catch (error) {
+        console.error("Erreur de chargement Cloud :", error);
+    }
+}
+
+async function saveToCloud(field, value) {
+    if (!currentUser) return; 
+    try {
+        const ref = doc(db, "users", currentUser.uid);
+        await updateDoc(ref, { [field]: value });
+    } catch (error) {
+        console.error("Erreur de sauvegarde Cloud :", error);
+    }
+}
+
+/* ==== 3. FONCTIONS DE RENDU GLOBAL ==== */
 function renderAll() {
-    // Tes fonctions existantes (loadTasks, loadRSS, etc.)
-    if (typeof loadTasks === "function") loadTasks();
-    if (typeof loadRSS === "function") loadRSS();
-    // On ajoute l'appel ici aussi pour la cohérence
-    updateBudgetWidget();
+    renderTasks();
+    loadRSS();
+    updateFlashcardWidget();
+    displayWordOfTheDay(); // Ajouté : Affiche le mot russe
+    const theme = localStorage.getItem("theme") || "light";
+    applyTheme(theme);
 }
 
 /* ==== 4. MODULES DE L'APPLICATION ==== */
