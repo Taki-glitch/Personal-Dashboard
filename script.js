@@ -144,8 +144,8 @@ function updateBudgetWidget() {
 }
 
 function renderWidgetCharts(monthExpenses) {
-    const ctxMonth = document.getElementById("chart-month");
-    const ctxCat = document.getElementById("chart-categories");
+    const ctxMonth = document.getElementById("widget-chart-month");
+    const ctxCat = document.getElementById("widget-chart-categories");
 
     if (!ctxMonth || !ctxCat || typeof Chart === "undefined") return;
 
