@@ -61,30 +61,32 @@
     </section>
 
     <section id="budget-widget" class="card">
-      <h2>💰 Budget</h2>
+      <h2>💰 Mon Budget</h2>
 
-      <p style="font-size: 1.4rem; margin: 10px 0;">
-        <strong id="budget-month-total">0 €</strong>
-        <br>
-        <small style="color: gray;">Dépensé ce mois-ci</small>
-      </p>
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 20px;">
+        <div style="flex: 1; min-width: 150px;">
+          <p style="font-size: 1.4rem; margin: 10px 0;">
+            <strong id="budget-month-total">0 €</strong>
+            <br>
+            <small style="color: gray;">Dépensé ce mois-ci</small>
+          </p>
+          <p style="margin-bottom: 15px;">
+            Aujourd’hui : <strong id="budget-today-total">0 €</strong>
+          </p>
+          <a href="budget.html" class="btn-primary" style="display:inline-block; text-decoration:none; background:#007ACC; color:white; padding:10px 15px; border-radius:8px; font-weight: bold;">
+            📊 Détails & Ajout
+          </a>
+        </div>
 
-      <p style="margin-bottom: 15px;">
-      Aujourd’hui : <strong id="budget-today-total">0 €</strong>
-      </p>
+        <div style="flex: 1; min-width: 200px; max-width: 250px;">
+          <canvas id="widget-chart-categories" height="150"></canvas>
+        </div>
+      </div>
 
-      <a href="budget.html"
-        style="display:inline-block;text-decoration:none;background:#007ACC;color:white;padding:10px 15px;border-radius:8px;">
-        📊 Voir le budget
-      </a>
-    </section>
-
-    <section class="budget-charts">
-      <h3>Dépenses du mois</h3>
-      <canvas id="chart-month" height="200"></canvas>
-
-      <h3>Répartition par catégorie</h3>
-      <canvas id="chart-categories" height="200"></canvas>
+      <div style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px;">
+        <h3 style="font-size: 0.9rem; color: gray; margin-bottom: 10px;">Évolution du mois</h3>
+        <canvas id="widget-chart-month" height="120"></canvas>
+      </div>
     </section>
 
 
