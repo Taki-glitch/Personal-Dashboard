@@ -478,7 +478,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 /* =====================================
     GESTION DE L'INTERFACE UTILISATEUR (AUTH)
-===================================== */
+===================================== 
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 onAuthStateChanged(auth, (user) => {
@@ -501,4 +501,4 @@ onAuthStateChanged(auth, (user) => {
         if (guest) guest.style.display = "block";
         status.style.display = "none";
     }
-});
+});*/
