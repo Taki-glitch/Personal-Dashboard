@@ -113,8 +113,6 @@ function renderAll() {
 
 /* ==== 4. MODULES DE L'APPLICATION ==== */
 // --- BUDGET WIDGET (CORRIGÉ AVEC GRAPHIQUES) ---
-let widgetMonthChart = null;
-let widgetCatChart = null;
 
 function updateBudgetWidget() {
     const monthTotalEl = document.getElementById("budget-month-total");
@@ -468,6 +466,12 @@ document.addEventListener("DOMContentLoaded", () => {
             await saveToCloud("rssFeeds", feeds);
         });
     }
+
+    //Rafraichir le RSS
+    const refreshRssBtn = document.getElementById("refresh-rss");
+        if (refreshRssBtn) {
+            refreshRssBtn.onclick = () => loadRSS();
+        }
 
     // Menu & Overlay
     const menuBtn = document.getElementById("menu-btn");
