@@ -11,27 +11,6 @@
 <button id="toggle-theme">🌙</button>
 <button id="menu-btn">☰</button>
 
-<nav id="side-menu">
-  <button id="close-menu">✕</button>
-  
-  <div id="user-profile" style="padding: 20px; border-bottom: 1px solid #eee; text-align: center;">
-    <p id="user-status" style="font-size: 0.9rem; color: gray; margin-bottom: 10px;">Chargement...</p>
-    <div id="user-info" style="display: none;">
-      <strong id="user-name" style="display: block; margin-bottom: 10px; font-size: 1rem;">Utilisateur</strong>
-      <button id="btn-logout" style="background: none; border: 1px solid #e74c3c; color: #e74c3c; padding: 5px 10px; border-radius: 5px; cursor: pointer;">Déconnexion</button>
-    </div>
-    <div id="user-guest">
-      <a href="login.html" style="text-decoration: none; color: #007ACC; font-weight: bold;">Se connecter</a>
-    </div>
-  </div>
-
-  <ul>
-    <li><a href="index.html">📊 Dashboard</a></li>
-    <li><a href="flashcards.html">🧠 Flashcards</a></li>
-    <li><a href="budget.html" class="active">💰 Budget</a></li>
-  </ul>
-</nav>
-
 <div id="overlay"></div>
 
 <header>
@@ -126,5 +105,10 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script type="module" src="budget.js"></script>
+
+<script type="module">
+    import { initMenu } from './menu.js';
+    initMenu();
+</script>
 </body>
 </html>
