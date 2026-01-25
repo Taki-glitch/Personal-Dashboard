@@ -8,6 +8,8 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 let currentUser = null;
+let widgetMonthChart = null;
+let widgetCatChart = null;
 
 /* ==== 2. AUTHENTIFICATION & SYNCHRONISATION ==== */
 onAuthStateChanged(auth, async (user) => {
@@ -110,36 +112,95 @@ function renderAll() {
 }
 
 /* ==== 4. MODULES DE L'APPLICATION ==== */
-// --- BUDGET WIDGET (LIEN AVEC BUDGET.JS) ---
+// --- BUDGET WIDGET (CORRIGÉ AVEC GRAPHIQUES) ---
+let widgetMonthChart = null;
+let widgetCatChart = null;
+
 function updateBudgetWidget() {
     const monthTotalEl = document.getElementById("budget-month-total");
     const todayTotalEl = document.getElementById("budget-today-total");
     
     if (!monthTotalEl || !todayTotalEl) return;
 
-    // Récupérer les dépenses depuis le localStorage (clé utilisée dans budget.js)
     const expenses = JSON.parse(localStorage.getItem("expenses") || "[]");
-    
     const now = new Date();
-    const currentMonthKey = now.toISOString().slice(0, 7); // "YYYY-MM"
-    const todayKey = now.toISOString().split("T")[0]; // "YYYY-MM-DD"
+    const currentMonthKey = now.toISOString().slice(0, 7);
+    const todayKey = now.toISOString().split("T")[0];
 
     let totalMonth = 0;
     let totalToday = 0;
-
-    expenses.forEach(exp => {
-        // exp.date est au format "YYYY-MM-DD"
+    const monthExpenses = expenses.filter(exp => {
         if (exp.date.startsWith(currentMonthKey)) {
             totalMonth += parseFloat(exp.amount) || 0;
+            if (exp.date === todayKey) totalToday += parseFloat(exp.amount) || 0;
+            return true;
         }
-        if (exp.date === todayKey) {
-            totalToday += parseFloat(exp.amount) || 0;
+        return false;
+    });
+
+    monthTotalEl.textContent = `${totalMonth.toFixed(2)} €`;
+    todayTotalEl.textContent = `${totalToday.toFixed(2)} €`;
+
+    // Lancer le rendu des graphiques
+    renderWidgetCharts(monthExpenses);
+}
+
+function renderWidgetCharts(monthExpenses) {
+    const ctxMonth = document.getElementById("chart-month");
+    const ctxCat = document.getElementById("chart-categories");
+
+    if (!ctxMonth || !ctxCat || typeof Chart === "undefined") return;
+
+    // --- 1. Graphique Évolution (Ligne) ---
+    const mapDays = {};
+    monthExpenses.forEach(e => {
+        mapDays[e.date] = (mapDays[e.date] || 0) + e.amount;
+    });
+    const sortedDates = Object.keys(mapDays).sort();
+
+    if (widgetMonthChart) widgetMonthChart.destroy();
+    widgetMonthChart = new Chart(ctxMonth, {
+        type: 'line',
+        data: {
+            labels: sortedDates.map(d => d.split('-')[2]), // Affiche juste le numéro du jour
+            datasets: [{
+                label: 'Dépenses (€)',
+                data: sortedDates.map(d => mapDays[d]),
+                borderColor: '#007ACC',
+                backgroundColor: 'rgba(0, 122, 204, 0.1)',
+                fill: true,
+                tension: 0.3
+            }]
+        },
+        options: { 
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } }
         }
     });
 
-    // Affichage avec formatage
-    monthTotalEl.textContent = `${totalMonth.toFixed(2)} €`;
-    todayTotalEl.textContent = `${totalToday.toFixed(2)} €`;
+    // --- 2. Graphique Répartition (Doughnut) ---
+    const mapCats = {};
+    monthExpenses.forEach(e => {
+        mapCats[e.category] = (mapCats[e.category] || 0) + e.amount;
+    });
+
+    if (widgetCatChart) widgetCatChart.destroy();
+    widgetCatChart = new Chart(ctxCat, {
+        type: 'doughnut',
+        data: {
+            labels: Object.keys(mapCats),
+            datasets: [{
+                data: Object.values(mapCats),
+                backgroundColor: ['#3498db', '#e74c3c', '#2ecc71', '#f1c40f', '#9b59b6', '#34495e']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom' } }
+        }
+    });
 }
 
 // --- AJOUT : FONCTION MOT DU JOUR ---
