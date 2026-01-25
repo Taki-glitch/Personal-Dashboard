@@ -50,13 +50,24 @@ body {
 #side-menu li { margin: 15px 0; border-bottom: none; }
 #side-menu a { color: white; text-decoration: none; font-size: 16px; }
 
+/* Ajoute ceci à style.css si ce n'est pas déjà présent */
 #overlay {
     position: fixed;
     top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.4); opacity: 0; pointer-events: none;
-    transition: opacity 0.3s; z-index: 1000;
+    background: rgba(0,0,0,0.5);
+    display: none;
+    z-index: 999;
 }
-#overlay.show { opacity: 1; pointer-events: auto; }
+#overlay.show {
+    display: block;
+}
+#side-menu {
+    z-index: 1000;
+    transition: left 0.3s ease;
+}
+#side-menu.open {
+    left: 0;
+}
 
 /* ===== HEADER & MÉTÉO (Design Accueil) ===== */
 header {
