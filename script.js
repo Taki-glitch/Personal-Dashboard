@@ -144,38 +144,39 @@ function updateBudgetWidget() {
 }
 
 function renderWidgetCharts(monthExpenses) {
-    const ctxMonth = document.getElementById("widget-chart-month");
     const ctxCat = document.getElementById("widget-chart-categories");
 
-    if (!ctxMonth || !ctxCat || typeof Chart === "undefined") return;
+    // On ne vérifie que le canvas du camembert maintenant
+    if (!ctxCat || typeof Chart === "undefined") return;
 
-    // --- 1. Graphique Évolution (Ligne) ---
-    const mapDays = {};
+    // --- Graphique Répartition (Doughnut) ---
+    const mapCats = {};
     monthExpenses.forEach(e => {
-        mapDays[e.date] = (mapDays[e.date] || 0) + e.amount;
+        mapCats[e.category] = (mapCats[e.category] || 0) + e.amount;
     });
-    const sortedDates = Object.keys(mapDays).sort();
 
-    if (widgetMonthChart) widgetMonthChart.destroy();
-    widgetMonthChart = new Chart(ctxMonth, {
-        type: 'line',
+    if (widgetCatChart) widgetCatChart.destroy();
+    
+    widgetCatChart = new Chart(ctxCat, {
+        type: 'doughnut',
         data: {
-            labels: sortedDates.map(d => d.split('-')[2]), // Affiche juste le numéro du jour
+            labels: Object.keys(mapCats),
             datasets: [{
-                label: 'Dépenses (€)',
-                data: sortedDates.map(d => mapDays[d]),
-                borderColor: '#007ACC',
-                backgroundColor: 'rgba(0, 122, 204, 0.1)',
-                fill: true,
-                tension: 0.3
+                data: Object.values(mapCats),
+                backgroundColor: ['#3498db', '#e74c3c', '#2ecc71', '#f1c40f', '#9b59b6', '#34495e']
             }]
         },
-        options: { 
+        options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: { legend: { display: false } }
+            plugins: { 
+                legend: { 
+                    position: 'right' // 'right' est souvent plus lisible pour un widget latéral
+                } 
+            }
         }
     });
+}
 
     // --- 2. Graphique Répartition (Doughnut) ---
     const mapCats = {};
