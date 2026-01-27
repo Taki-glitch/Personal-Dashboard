@@ -420,3 +420,41 @@ body.dark .input-styled:focus {
     border-radius: 10px; 
 }
 
+/* ==========================================================
+   STYLE UNIVERSEL DES LISTES DÉROULANTES (Widgets Dashboard)
+   ========================================================== */
+
+/* Cible toutes les listes finissant par "list" (task-list, rss-list, tag-list...) 
+   ainsi que la liste spécifique des flashcards */
+ul[id$="list"], #flashcardsList, #priorityList, #tagList {
+    flex-grow: 1;
+    overflow-y: auto;
+    max-height: 250px; /* Empêche les widgets de s'agrandir à l'infini */
+    margin-top: 10px;
+    padding-right: 5px;
+    list-style: none;
+    padding-left: 0;
+}
+
+/* Design de la barre de défilement (Scrollbar) pour Chrome/Edge/Safari */
+ul[id$="list"]::-webkit-scrollbar, 
+#flashcardsList::-webkit-scrollbar,
+#priorityList::-webkit-scrollbar,
+#tagList::-webkit-scrollbar {
+    width: 6px;
+}
+
+ul[id$="list"]::-webkit-scrollbar-thumb, 
+#flashcardsList::-webkit-scrollbar-thumb,
+#priorityList::-webkit-scrollbar-thumb,
+#tagList::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 10px;
+}
+
+/* Petit ajustement pour le mode sombre */
+body.dark ul[id$="list"]::-webkit-scrollbar-thumb,
+body.dark #flashcardsList::-webkit-scrollbar-thumb {
+    background: #444;
+}
+
