@@ -108,27 +108,28 @@ header a { color: #e0e0e0; text-decoration: none; font-size: 14px; margin-top: 8
 
 .weather-hour img { width: 48px; height: 48px; }
 
-/* ===== LAYOUT PRINCIPAL ===== */
+/* ===== LAYOUT PRINCIPAL (CORRIGÉ) ===== */
 main {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
+    display: grid;
+    /* Crée des colonnes automatiques de 320px minimum */
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
     gap: 25px;
     padding: 25px;
+    align-items: start; 
 }
 
 section {
     background: white;
     padding: 20px;
     border-radius: 15px;
-    width: 100%;
-    max-width: 450px;
+    width: 100%; /* Occupe toute la largeur de sa cellule de grille */
+    /* On supprime le max-width qui bloque l'alignement */
+    
+    /* FORCE LA HAUTEUR MINIMALE pour l'uniformité */
+    min-height: 420px; 
+    display: flex;
+    flex-direction: column;
     box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-}
-
-section:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 6px 15px rgba(0,0,0,0.15);
 }
 
 /* ===== FORMULAIRES & BOUTONS ===== */
@@ -395,5 +396,27 @@ body.dark .input-styled {
 
 body.dark .input-styled:focus {
   background: #1e1e1e;
+}
+
+/* Permet au contenu de prendre la place sans déformer la carte */
+#task-list, #rss-list {
+    flex-grow: 1;
+    overflow-y: auto;
+    max-height: 250px; /* Ajuste selon tes préférences */
+    margin-top: 10px;
+}
+
+/* Custom Scrollbar pour toutes les listes */
+#task-list::-webkit-scrollbar, 
+#rss-list::-webkit-scrollbar,
+#flashcardsList::-webkit-scrollbar { 
+    width: 6px; 
+}
+
+#task-list::-webkit-scrollbar-thumb,
+#rss-list::-webkit-scrollbar-thumb,
+#flashcardsList::-webkit-scrollbar-thumb { 
+    background: #ccc; 
+    border-radius: 10px; 
 }
 
