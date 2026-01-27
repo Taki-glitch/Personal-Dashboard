@@ -170,7 +170,16 @@ function renderWidgetCharts(monthExpenses) {
         options: { 
             responsive: true,
             maintainAspectRatio: false,
-            plugins: { legend: { display: false } }
+            plugins: { legend: { display: false } 
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        maxTicksLimit: 5 
+                    }
+                }
+            }
         }
     });
 
