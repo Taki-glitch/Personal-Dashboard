@@ -36,9 +36,12 @@
 	</div>
 
     <input type="text" id="note" placeholder="Note (optionnel)">
-    <button id="add-expense" class="btn-primary full-width">
-  		➕ Ajouter la dépense
-		</button>
+    
+	<button id="add-expense" class="btn-primary full-width">➕ Ajouter la dépense</button>
+
+	<div class="budget-actions">
+    	<button id="add-expense" class="btn-primary">➕ Ajouter la dépense</button>
+	</div>
   </section>
 
   <section class="card" style="text-align: center;">
@@ -57,9 +60,9 @@
     <h2>🎯 Budgets mensuels</h2>
     <label>Budget Global (€)</label>
     <input type="number" id="budget-global" placeholder="Ex: 1000">
-    <button id="save-budget-global" class="btn-secondary full-width">
-  			💾 Enregistrer le budget global
-		</button>
+    <div class="budget-actions">
+    	<button id="save-budget-global" class="btn-secondary">💾 Enregistrer</button>
+	</div>
 
     <hr style="margin:20px 0; border: 0; border-top: 1px solid #eee;">
 
@@ -72,9 +75,9 @@
       <option value="Autre">Autre</option>
     </select>
     <input type="number" id="budget-category-amount" placeholder="Montant (€)">
-    <button id="save-budget-category" class="btn-secondary full-width">
-  			💾 Enregistrer le budget catégorie
-		</button>
+    <div class="budget-actions">
+    	<button id="save-budget-category" class="btn-secondary">💾 Enregistrer</button>
+	</div>
   </section>
 
   <section class="card">
