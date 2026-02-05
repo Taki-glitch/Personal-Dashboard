@@ -263,41 +263,51 @@ body.dark .budget-bar {
 
 /* ===== BOUTONS RESPONSIVE – BUDGET ===== */
 
-/* Boutons principaux */
+.btn-primary, .btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.6em 1.2em; /* Utilisation de em pour être proportionnel au texte */
+  font-size: 0.9rem;     /* Taille légèrement réduite */
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  border: none;
+  width: auto;           /* Ne prend plus toute la largeur par défaut */
+  min-width: 120px;      /* Sécurité pour le clic */
+  max-width: 100%;
+}
+
 .btn-primary {
   background: linear-gradient(135deg, #007ACC, #005A99);
-  padding: 14px 18px;
-  font-size: 1rem;
-  border-radius: 10px;
-  width: 100%;
-}
-
-/* Boutons secondaires */
-.btn-secondary {
-  background: #ecf0f1;
-  color: #007ACC;
-  border: 2px solid #007ACC;
-  padding: 14px 18px;
-  font-size: 0.95rem;
-  border-radius: 10px;
-  width: 100%;
-}
-
-.btn-secondary:hover {
-  background: #007ACC;
   color: white;
 }
 
-/* Boutons navigation mois */
+.btn-secondary {
+  background: transparent;
+  color: #007ACC;
+  border: 2px solid #007ACC;
+}
+
+/* Boutons de navigation du mois (plus compacts) */
 .btn-circle {
-  width: 44px;
-  height: 44px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
-  font-size: 1.2rem;
+  font-size: 1rem;
   padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0; /* Évite la déformation */
+}
+
+/* Conteneur d'actions pour aligner les boutons proprement */
+.budget-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+  flex-wrap: wrap; /* Passage à la ligne si pas de place */
 }
 
 .btn-nav {
@@ -318,14 +328,22 @@ body.dark .budget-bar {
 
 /* ===== MOBILE FIRST ===== */
 @media (max-width: 600px) {
-  button {
+  /* Sur mobile, on remet les boutons en pleine largeur pour le confort */
+  .btn-primary, .btn-secondary {
+    width: 100%;
     font-size: 1rem;
+    padding: 12px;
   }
 
+  .form-row {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  /* On garde les cercles de navigation petits */
   .btn-circle {
-    width: 48px;
-    height: 48px;
-    font-size: 1.4rem;
+    width: 44px;
+    height: 44px;
   }
 }
 
@@ -352,14 +370,13 @@ body.dark .btn-secondary:hover {
 /* Inputs stylisés comme des boutons */
 .input-styled {
   flex: 1;
-  padding: 14px 16px;
-  border-radius: 10px;
+  padding: 10px 12px; /* Réduit de 14px à 10px */
+  border-radius: 8px;
   border: 2px solid #007ACC;
   background: white;
-  font-size: 0.95rem;
-  font-weight: bold;
-  color: #007ACC;
-  cursor: pointer;
+  font-size: 0.9rem;
+  color: #333;
+  width: 100%;
 }
 
 /* Placeholder & date icon */
