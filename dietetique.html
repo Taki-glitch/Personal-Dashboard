@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🥗 Diététique</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>🥗 Suivi Diététique</h1>
+  </header>
+
+  <main>
+    <section class="card">
+      <h2>🕒 Jeûne</h2>
+      <div class="diet-row">
+        <label for="fasting-target">Type / objectif</label>
+        <select id="fasting-target">
+          <option value="16">16:8 (16h)</option>
+          <option value="18">18:6 (18h)</option>
+          <option value="20">20:4 (20h)</option>
+          <option value="14">Personnalisé léger (14h)</option>
+        </select>
+      </div>
+      <p id="fasting-status" class="diet-status">Aucun jeûne en cours</p>
+      <p id="fasting-time" class="diet-time">00h 00m 00s</p>
+      <p id="fasting-goal">Objectif : 16h</p>
+      <div class="progress-track"><div id="fasting-progress" class="progress-fill"></div></div>
+      <p id="fasting-phase" class="diet-phase">Phase : digestion</p>
+      <div class="diet-actions">
+        <button id="start-fasting" class="btn-primary">▶ Démarrer le jeûne</button>
+        <button id="stop-fasting" class="btn-secondary">■ Arrêter</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>⚖️ Poids</h2>
+      <p id="current-weight">Poids actuel : —</p>
+      <div class="diet-inline-inputs">
+        <input type="number" step="0.1" id="weight-input" placeholder="Ex: 72.4">
+        <button id="add-weight" class="btn-primary">+ Ajouter poids</button>
+      </div>
+      <canvas id="weight-chart" height="140"></canvas>
+      <p id="weight-stats">Variation 7 jours : — | Variation 30 jours : —</p>
+    </section>
+
+    <section class="card">
+      <h2>💧 Hydratation</h2>
+      <p id="hydration-count">0 / 8 verres</p>
+      <p id="hydration-liters">0.00 L bus aujourd'hui</p>
+      <div class="diet-inline-inputs">
+        <button id="water-minus" class="btn-secondary">-1 verre</button>
+        <button id="water-plus" class="btn-primary">+1 verre</button>
+      </div>
+      <div class="diet-row">
+        <label for="hydration-target">Objectif de verres</label>
+        <input type="number" id="hydration-target" min="1" value="8">
+      </div>
+      <div class="diet-row">
+        <label for="glass-size">Taille d'un verre (ml)</label>
+        <select id="glass-size">
+          <option value="200">200 ml</option>
+          <option value="250" selected>250 ml</option>
+        </select>
+      </div>
+      <div class="progress-track"><div id="hydration-progress" class="progress-fill"></div></div>
+    </section>
+
+    <section class="card">
+      <h2>📊 Statistiques</h2>
+      <ul id="diet-stats" class="diet-stats"></ul>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script type="module" src="dietetique.js"></script>
+  <script type="module">
+    import { initMenu } from './menu.js';
+    initMenu();
+  </script>
+</body>
+</html>
