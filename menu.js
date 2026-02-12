@@ -24,6 +24,7 @@ export function initMenu() {
             <li><a href="index.html">📊 Dashboard</a></li>
             <li><a href="flashcards.html">🧠 Flashcards</a></li>
             <li><a href="budget.html">💰 Budget</a></li>
+            <li><a href="dietetique.html">🥗 Diététique</a></li>
         </ul>
     </nav>`;
 

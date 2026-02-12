@@ -475,3 +475,50 @@ body.dark #flashcardsList::-webkit-scrollbar-thumb {
     background: #444;
 }
 
+
+.progress-track {
+  width: 100%;
+  background: #e9edf2;
+  border-radius: 999px;
+  height: 12px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  width: 0%;
+  height: 100%;
+  background: #007ACC;
+  transition: width 0.4s ease;
+}
+
+.diet-time {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 6px 0;
+}
+
+.diet-status,
+.diet-phase {
+  color: #555;
+  margin: 8px 0;
+}
+
+.diet-actions,
+.diet-inline-inputs {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.diet-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 10px 0;
+}
+
+.diet-stats {
+  margin: 0;
+  padding-left: 20px;
+  line-height: 1.8;
+}
