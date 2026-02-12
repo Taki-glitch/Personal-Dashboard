@@ -83,6 +83,11 @@ async function loadFromCloud() {
             // --- LE THÈME ---
             if (data.theme) localStorage.setItem("theme", data.theme);
             
+            // --- DIÉTÉTIQUE ---
+            if (data.dietFastingState) localStorage.setItem("dietFastingState", JSON.stringify(data.dietFastingState));
+            if (Array.isArray(data.dietWeightEntries)) localStorage.setItem("dietWeightEntries", JSON.stringify(data.dietWeightEntries));
+            if (data.dietHydrationState) localStorage.setItem("dietHydrationState", JSON.stringify(data.dietHydrationState));
+            
             renderAll();
         }
     } catch (error) {
@@ -106,6 +111,7 @@ function renderAll() {
     loadRSS();
     updateFlashcardWidget();
     updateBudgetWidget();
+    updateHomeFastingWidget();
     displayWordOfTheDay(); // Ajouté : Affiche le mot russe
     const theme = localStorage.getItem("theme") || "light";
     applyTheme(theme);
@@ -206,6 +212,53 @@ function renderWidgetCharts(monthExpenses) {
         }
     });
 }
+// Fonction Diététique
+function getDietFastingState() {
+    return JSON.parse(localStorage.getItem("dietFastingState") || "null") || {
+        isActive: false,
+        startTime: null,
+        targetHours: 16
+    };
+}
+
+function formatDuration(ms) {
+    const safeMs = Math.max(0, ms || 0);
+    const totalSeconds = Math.floor(safeMs / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    return `${String(hours).padStart(2, "0")}h ${String(minutes).padStart(2, "0")}m ${String(seconds).padStart(2, "0")}s`;
+}
+
+function updateHomeFastingWidget() {
+    const statusEl = document.getElementById("home-fasting-status");
+    const timeEl = document.getElementById("home-fasting-time");
+    const goalEl = document.getElementById("home-fasting-goal");
+    const progressEl = document.getElementById("home-fasting-progress");
+    if (!statusEl || !timeEl || !goalEl || !progressEl) return;
+
+    const fasting = getDietFastingState();
+    const targetMs = (fasting.targetHours || 16) * 3600000;
+
+    if (!fasting.isActive || !fasting.startTime) {
+        statusEl.textContent = "Aucun jeûne actif.";
+        timeEl.textContent = "00h 00m 00s";
+        goalEl.textContent = `Objectif : ${fasting.targetHours || 16}h`;
+        progressEl.style.width = "0%";
+        progressEl.style.backgroundColor = "#007ACC";
+        return;
+    }
+
+    const elapsed = Date.now() - fasting.startTime;
+    const percent = Math.min(100, Math.round((elapsed / targetMs) * 100));
+    timeEl.textContent = formatDuration(elapsed);
+    statusEl.textContent = percent >= 100 ? "🔥 Objectif atteint !" : "Jeûne en cours";
+    goalEl.textContent = `Objectif : ${fasting.targetHours || 16}h (${percent}%)`;
+    progressEl.style.width = `${percent}%`;
+    progressEl.style.backgroundColor = percent >= 100 ? "#2ecc71" : "#007ACC";
+}
+
+setInterval(updateHomeFastingWidget, 1000);
 
 // --- AJOUT : FONCTION MOT DU JOUR ---
 async function displayWordOfTheDay() {
