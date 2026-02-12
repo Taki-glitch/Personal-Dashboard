@@ -9,7 +9,12 @@
 <body>
 
 <header>
-  <h1>💰 Gestion Budget</h1>
+  <h1>💰 Gestion du budget</h1>
+  <div class="budget-header-bar">
+    <button id="prev-month" class="btn-circle btn-nav">◀</button>
+    <h2 id="current-month-label">—</h2>
+    <button id="next-month" class="btn-circle btn-nav">▶</button>
+  </div>
 </header>
 
 <main>
@@ -38,18 +43,6 @@
     <input type="text" id="note" placeholder="Note (optionnel)">
     
 	<button id="add-expense" class="btn-primary full-width">➕ Ajouter la dépense</button>
-  </section>
-
-  <section class="card" style="text-align: center;">
-    <div class="month-selector" style="display: flex; align-items: center; justify-content: center; gap: 20px;">
-      <button id="prev-month" class="btn-circle btn-nav">◀</button>
-			
-      <h2 id="current-month-label" style="margin:0; min-width:150px;">
-			—
-			</h2>
-		
-    <button id="next-month" class="btn-circle btn-nav">▶</button>
-    </div>
   </section>
 
   <section class="card">
