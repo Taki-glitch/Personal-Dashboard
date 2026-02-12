@@ -39,6 +39,9 @@ export function initMenu() {
     const toggleMenu = (show) => {
         sideMenu.classList.toggle("open", show);
         overlay.classList.toggle("show", show);
+        menuBtn.classList.toggle("hidden", show);
+        menuBtn.setAttribute("aria-hidden", show ? "true" : "false");
+        menuBtn.setAttribute("tabindex", show ? "-1" : "0");
     };
 
     menuBtn.onclick = () => toggleMenu(true);
