@@ -28,10 +28,25 @@
       <p id="fasting-goal">Objectif : 16h</p>
       <div class="progress-track"><div id="fasting-progress" class="progress-fill"></div></div>
       <p id="fasting-phase" class="diet-phase">Phase : digestion</p>
+      <div class="fasting-wheel-wrap">
+        <div id="fasting-wheel" class="fasting-wheel" role="img" aria-label="Schéma des phases du jeûne">
+          <div class="fasting-wheel-center">
+            <span id="fasting-wheel-hours">0.0h</span>
+            <small id="fasting-wheel-phase">Digestion</small>
+          </div>
+        </div>
+        <ul id="fasting-stage-list" class="fasting-stage-list"></ul>
+      </div>
       <div class="diet-actions">
         <button id="start-fasting" class="btn-primary">▶ Démarrer le jeûne</button>
         <button id="stop-fasting" class="btn-secondary">■ Arrêter</button>
       </div>
+    </section>
+
+    <section class="card">
+      <h2>🚫 Compteurs sèche</h2>
+      <p class="diet-status">Suivi des périodes sans chocolat, vin, sucre et bière.</p>
+      <div id="abstinence-list" class="abstinence-list"></div>
     </section>
 
     <section class="card">
