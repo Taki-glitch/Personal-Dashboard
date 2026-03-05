@@ -4,10 +4,24 @@ import { doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.
 
 let currentUser = null;
 let fastingInterval = null;
+let abstinenceInterval = null;
 let weightChart = null;
 let eventsInitialized = false;
 
 const DEFAULT_FASTING = { isActive: false, startTime: null, targetHours: 16, history: [] };
+const FASTING_STAGES = [
+  { label: "Digestion", min: 0, max: 4 },
+  { label: "Stabilisation glycémie", min: 4, max: 8 },
+  { label: "Utilisation des graisses", min: 8, max: 12 },
+  { label: "Augmentation cétones", min: 12, max: 16 },
+  { label: "Autophagie possible", min: 16, max: 24 }
+];
+const DEFAULT_ABSTINENCE = {
+  chocolat: { label: "Chocolat", since: null },
+  vin: { label: "Vin", since: null },
+  sucre: { label: "Sucre", since: null },
+  biere: { label: "Bière", since: null }
+};
 
 onAuthStateChanged(auth, async (user) => {
   currentUser = user || null;
@@ -39,6 +53,17 @@ function getHydrationState() {
   };
 }
 
+function getAbstinenceState() {
+  const raw = JSON.parse(localStorage.getItem("dietAbstinenceState") || "null") || {};
+  return Object.entries(DEFAULT_ABSTINENCE).reduce((acc, [key, defaults]) => {
+    acc[key] = {
+      label: raw[key]?.label || defaults.label,
+      since: raw[key]?.since || null
+    };
+    return acc;
+  }, {});
+}
+
 async function loadDietFromCloud() {
   try {
     const snap = await getDoc(doc(db, "users", currentUser.uid));
@@ -47,6 +72,7 @@ async function loadDietFromCloud() {
     if (data.dietFastingState) localStorage.setItem("dietFastingState", JSON.stringify(data.dietFastingState));
     if (Array.isArray(data.dietWeightEntries)) localStorage.setItem("dietWeightEntries", JSON.stringify(data.dietWeightEntries));
     if (data.dietHydrationState) localStorage.setItem("dietHydrationState", JSON.stringify(data.dietHydrationState));
+    if (data.dietAbstinenceState) localStorage.setItem("dietAbstinenceState", JSON.stringify(data.dietAbstinenceState));
   } catch (error) {
     console.error("Erreur chargement diététique cloud :", error);
   }
@@ -70,11 +96,50 @@ function formatDuration(ms) {
 }
 
 function getFastingPhase(hours) {
-  if (hours < 4) return "Digestion";
-  if (hours < 8) return "Stabilisation glycémie";
-  if (hours < 12) return "Début utilisation graisses";
-  if (hours < 16) return "Augmentation cétones";
-  return "Autophagie possible";
+  return FASTING_STAGES.find((stage) => hours >= stage.min && hours < stage.max)?.label || "Autophagie possible";
+}
+
+function getCurrentFastingHours() {
+  const state = getFastingState();
+  if (!state.isActive || !state.startTime) return 0;
+  return Math.max(0, (Date.now() - state.startTime) / 3600000);
+}
+
+function getFastingStageIndex(hours) {
+  const found = FASTING_STAGES.findIndex((stage) => hours >= stage.min && hours < stage.max);
+  return found === -1 ? FASTING_STAGES.length - 1 : found;
+}
+
+function buildFastingWheelGradient(activeIndex) {
+  const step = 100 / FASTING_STAGES.length;
+  const segments = FASTING_STAGES.map((_, index) => {
+    const from = (index * step).toFixed(2);
+    const to = ((index + 1) * step).toFixed(2);
+    const color = index === activeIndex ? "#2ecc71" : "#c7d7e8";
+    return `${color} ${from}% ${to}%`;
+  });
+  return `conic-gradient(${segments.join(",")})`;
+}
+
+function refreshFastingWheelUI() {
+  const hours = getCurrentFastingHours();
+  const stageIndex = getFastingStageIndex(hours);
+  const stage = FASTING_STAGES[stageIndex];
+  const wheel = document.getElementById("fasting-wheel");
+  const hoursLabel = document.getElementById("fasting-wheel-hours");
+  const phaseLabel = document.getElementById("fasting-wheel-phase");
+  const stageList = document.getElementById("fasting-stage-list");
+  if (!wheel || !hoursLabel || !phaseLabel || !stageList) return;
+
+  wheel.style.background = buildFastingWheelGradient(stageIndex);
+  hoursLabel.textContent = `${hours.toFixed(1)}h`;
+  phaseLabel.textContent = stage.label;
+  stageList.innerHTML = FASTING_STAGES.map((item, index) => `
+    <li class="${index === stageIndex ? "active" : ""}">
+      <span>${item.label}</span>
+      <small>${item.min}h-${item.max}h</small>
+    </li>
+  `).join("");
 }
 
 function refreshFastingUI() {
@@ -93,6 +158,7 @@ function refreshFastingUI() {
     phase.textContent = "Phase : digestion";
     progress.style.width = "0%";
     progress.style.backgroundColor = "#007ACC";
+    refreshFastingWheelUI();
     return;
   }
 
@@ -106,6 +172,28 @@ function refreshFastingUI() {
   phase.textContent = `Phase : ${getFastingPhase(hours)}`;
   progress.style.width = `${percent}%`;
   progress.style.backgroundColor = percent >= 100 ? "#2ecc71" : "#007ACC";
+  refreshFastingWheelUI();
+}
+
+function refreshAbstinenceUI() {
+  const wrapper = document.getElementById("abstinence-list");
+  if (!wrapper) return;
+  const state = getAbstinenceState();
+  wrapper.innerHTML = Object.entries(state).map(([key, item]) => {
+    const elapsed = item.since ? formatDuration(Date.now() - item.since) : "Pas de suivi démarré";
+    return `
+      <div class="abstinence-item" data-key="${key}">
+        <div>
+          <strong>${item.label}</strong>
+          <p class="diet-phase">Sans ${item.label.toLowerCase()} : <span class="abstinence-duration">${elapsed}</span></p>
+        </div>
+        <div class="diet-actions">
+          <button class="btn-primary abstinence-start" data-key="${key}">Démarrer</button>
+          <button class="btn-secondary abstinence-reset" data-key="${key}">Rechute</button>
+        </div>
+      </div>
+    `;
+  }).join("");
 }
 
 function refreshWeightUI() {
@@ -179,6 +267,7 @@ function refreshStatsUI() {
   const fasting = getFastingState();
   const weights = getWeightEntries();
   const hydration = getHydrationState();
+  const abstinence = getAbstinenceState();
 
   const fastingHistory = fasting.history || [];
   const recentFasting = fastingHistory.slice(-7);
@@ -207,12 +296,17 @@ function refreshStatsUI() {
 
   const w30 = weights.slice(-30);
   const weightDelta = w30.length > 1 ? w30[w30.length - 1].weight - w30[0].weight : 0;
+  const abstinenceBest = Object.values(abstinence)
+    .filter((item) => item.since)
+    .map((item) => ({ ...item, hours: (Date.now() - item.since) / 3600000 }))
+    .sort((a, b) => b.hours - a.hours)[0];
 
   document.getElementById("diet-stats").innerHTML = `
     <li>🔥 Moyenne durée de jeûne (7 derniers jeûnes) : <strong>${avgFasting.toFixed(1)}h</strong></li>
     <li>⚖️ Évolution poids (30 dernières entrées) : <strong>${weightDelta >= 0 ? "+" : ""}${weightDelta.toFixed(1)} kg</strong></li>
     <li>💧 Moyenne hydratation (7 jours) : <strong>${avgHydration.toFixed(1)} verres</strong></li>
     <li>📅 Jours consécutifs objectif hydratation : <strong>${consecutive}</strong></li>
+    <li>🚫 Meilleure série sèche : <strong>${abstinenceBest ? `${abstinenceBest.label} (${abstinenceBest.hours.toFixed(1)}h)` : "—"}</strong></li>
   `;
 }
 
@@ -303,6 +397,28 @@ function initEvents() {
     await saveDietField("dietHydrationState", state);
     refreshHydrationUI();
   });
+
+  document.getElementById("abstinence-list").addEventListener("click", async (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) return;
+    const key = target.dataset.key;
+    if (!key) return;
+
+    const state = getAbstinenceState();
+    if (!state[key]) return;
+
+    if (target.classList.contains("abstinence-start")) {
+      state[key].since = Date.now();
+    }
+    if (target.classList.contains("abstinence-reset")) {
+      state[key].since = null;
+    }
+
+    localStorage.setItem("dietAbstinenceState", JSON.stringify(state));
+    await saveDietField("dietAbstinenceState", state);
+    refreshAbstinenceUI();
+    refreshStatsUI();
+  });
 }
 
 function initPage() {
@@ -312,13 +428,22 @@ function initPage() {
   if (fastingInterval) clearInterval(fastingInterval);
   fastingInterval = setInterval(refreshFastingUI, 1000);
 
+  if (abstinenceInterval) clearInterval(abstinenceInterval);
+  abstinenceInterval = setInterval(() => {
+    refreshFastingWheelUI();
+    refreshAbstinenceUI();
+  }, 1000);
+
   initEvents();
   refreshFastingUI();
+  refreshFastingWheelUI();
   refreshWeightUI();
   refreshHydrationUI();
+  refreshAbstinenceUI();
   refreshStatsUI();
 }
 
 window.addEventListener("beforeunload", () => {
   if (fastingInterval) clearInterval(fastingInterval);
+  if (abstinenceInterval) clearInterval(abstinenceInterval);
 });

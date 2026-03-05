@@ -552,3 +552,93 @@ body.dark #flashcardsList::-webkit-scrollbar-thumb {
   padding-left: 20px;
   line-height: 1.8;
 }
+
+.fasting-wheel-wrap {
+  margin: 14px 0;
+  display: grid;
+  gap: 14px;
+}
+
+.fasting-wheel {
+  width: 190px;
+  height: 190px;
+  border-radius: 50%;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.fasting-wheel::before {
+  content: "";
+  position: absolute;
+  width: 128px;
+  height: 128px;
+  border-radius: 50%;
+  background: #fff;
+}
+
+.fasting-wheel-center {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  z-index: 1;
+}
+
+#fasting-wheel-hours {
+  font-weight: 700;
+  font-size: 1.4rem;
+}
+
+.fasting-stage-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.fasting-stage-list li {
+  border: 1px solid #dce6f0;
+  border-radius: 10px;
+  padding: 8px 10px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.fasting-stage-list li.active {
+  border-color: #2ecc71;
+  background: #eafaf0;
+}
+
+.abstinence-list {
+  display: grid;
+  gap: 12px;
+}
+
+.abstinence-item {
+  border: 1px solid #dce6f0;
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.abstinence-duration {
+  font-family: monospace;
+  font-size: 1.05rem;
+}
+
+body.dark .fasting-wheel::before {
+  background: #1e1e1e;
+}
+
+body.dark .fasting-stage-list li,
+body.dark .abstinence-item {
+  border-color: #3a4c5f;
+}
+
+body.dark .fasting-stage-list li.active {
+  background: rgba(46, 204, 113, 0.15);
+}
